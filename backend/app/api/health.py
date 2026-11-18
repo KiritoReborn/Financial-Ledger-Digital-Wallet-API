@@ -27,7 +27,8 @@ def health(request: Request) -> HealthStatus | JSONResponse:
     """Check readability through the injected readiness adapter."""
     try:
         request.app.state.readiness.check()
-    except Exception as error:
+    # This HTTP boundary must sanitize unexpected adapter failures too.
+    except Exception as error:  # noqa: BLE001
         sqlite_code = getattr(error, "sqlite_errorcode", 0)
         if isinstance(error, sqlite3.OperationalError) and sqlite_code & 0xFF == sqlite3.SQLITE_BUSY:
             return JSONResponse(
