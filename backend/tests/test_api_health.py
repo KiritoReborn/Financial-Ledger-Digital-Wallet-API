@@ -5,12 +5,12 @@ from contextlib import closing
 
 import pytest
 
-pytest.importorskip("fastapi", reason="API checks require backend[dev].")
-pytest.importorskip("app", reason="Install the backend or set PYTHONPATH=backend.")
-
-from fastapi.testclient import TestClient  # noqa: E402
-
-from app.main import create_app  # noqa: E402
+TestClient = pytest.importorskip(
+    "fastapi.testclient", reason="API checks require backend[dev]."
+).TestClient
+create_app = pytest.importorskip(
+    "app.main", reason="Install the backend or set PYTHONPATH=backend."
+).create_app
 
 
 def test_health_needs_no_authentication_and_returns_json(tmp_path, monkeypatch):
