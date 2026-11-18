@@ -22,9 +22,11 @@ revised distribution, which assigns C01 to C.
 
 Validation: six real SQLite readiness tests passed on Python 3.11; ten pytest
 tests passed on available Python 3.14 (six readiness plus four existing trigger
-tests). HTTP TestClient execution timed out locally; full HTTP validation and
+tests). Direct adapter/OpenAPI checks and the package build also passed on
+available Python 3.14. HTTP TestClient execution timed out locally; full HTTP validation and
 Ruff are pending the API CI job. Do not mark all C01 complete or merge until
 the required checks and human review pass.
 
-Issue and PR links: pending creation. Progress note:
+Issue and PR links: not created because the connection rejects repository writes
+with HTTP 403 and shell networking is denied. Progress note:
 brain/projects/2026-11-19-c01-health.md.

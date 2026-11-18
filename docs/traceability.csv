@@ -1,4 +1,4 @@
 requirement_id,work_package,status,issue,pr,test,skill,brain_note
-EI-SW-1,C01,health-implemented-pending-review,pending,pending,backend/tests/test_api_health.py,local-check-pending-D,brain/projects/2026-11-19-c01-health.md
-NFR-SEC-7,C01,health-errors-covered-pending-review,pending,pending,backend/tests/test_api_health.py,local-check-pending-D,brain/projects/2026-11-19-c01-health.md
+EI-SW-1,C01,health-implemented-HTTP-CI-pending,write-access-blocked,write-access-blocked,backend/tests/test_api_health.py,local-check-pending-D,brain/projects/2026-11-19-c01-health.md
+NFR-SEC-7,C01,health-errors-HTTP-CI-pending,write-access-blocked,write-access-blocked,backend/tests/test_api_health.py,local-check-pending-D,brain/projects/2026-11-19-c01-health.md
 SE-6,C01,health-readiness-interface-only,pending,pending,backend/tests/test_sqlite_readiness.py,not-applicable,brain/projects/2026-11-19-c01-health.md
