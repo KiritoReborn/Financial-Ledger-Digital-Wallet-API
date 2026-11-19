@@ -1,0 +1,1154 @@
+openapi: 3.0.3
+info:
+  title: Financial Ledger & Digital Wallet API
+  version: 0.1.0-provisional
+  description: Simulated funds only. C02 contract proposal from the final 14-page SRS and revised work
+    plan. Mock responses are static examples; real auth, idempotency, posting and reconciliation remain
+    with their owners. DTO shapes not fixed by the SRS and the integer history cursor require team approval.
+    Full FastAPI drift checking belongs to B08 after routes are implemented.
+servers:
+- url: http://127.0.0.1:8000
+  description: Real API (partially implemented)
+- url: http://127.0.0.1:4010
+  description: Local Prism mock
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Read-only database health
+      security: []
+      responses:
+        '200':
+          description: Read-only database health
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+              example:
+                status: ok
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /users:
+    post:
+      operationId: createUser
+      summary: Register and return a token once
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+            example:
+              name: Example User
+              email: example@example.test
+      responses:
+        '201':
+          description: Register and return a token once
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreated'
+              example:
+                id: 00000000-0000-4000-8000-000000000002
+                name: Example User
+                email: example@example.test
+                token: example-only-not-a-real-token
+                created_at: '2026-11-19T00:00:00Z'
+        '409':
+          $ref: '#/components/responses/EmailExists'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /wallets:
+    post:
+      operationId: createWallet
+      summary: Create a zero-balance user wallet
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletRequest'
+            example:
+              currency: INR
+      responses:
+        '201':
+          description: Create a zero-balance user wallet
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+              example:
+                id: 00000000-0000-4000-8000-000000000001
+                user_id: 00000000-0000-4000-8000-000000000002
+                currency: INR
+                balance_minor: 0
+                is_system: false
+                created_at: '2026-11-19T00:00:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+    get:
+      operationId: listWallets
+      summary: List only the caller's wallets
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: List only the caller's wallets
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletList'
+              example:
+                wallets:
+                - id: 00000000-0000-4000-8000-000000000001
+                  user_id: 00000000-0000-4000-8000-000000000002
+                  currency: INR
+                  balance_minor: 0
+                  is_system: false
+                  created_at: '2026-11-19T00:00:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /wallets/{id}:
+    get:
+      operationId: getWallet
+      summary: Read an owned wallet
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Read an owned wallet
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+              example:
+                id: 00000000-0000-4000-8000-000000000001
+                user_id: 00000000-0000-4000-8000-000000000002
+                currency: INR
+                balance_minor: 0
+                is_system: false
+                created_at: '2026-11-19T00:00:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /wallets/{id}/deposit:
+    post:
+      operationId: deposit
+      summary: Add simulated funds idempotently
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositRequest'
+            example:
+              amount_minor: 100
+      responses:
+        '201':
+          description: Add simulated funds idempotently
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+            Idempotent-Replayed:
+              description: true when a stored response is replayed; optional otherwise. The mock is a
+                static fixture, not an idempotency implementation.
+              schema:
+                type: string
+                enum:
+                - 'true'
+                - 'false'
+              example: 'false'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+              example:
+                id: 00000000-0000-4000-8000-000000000003
+                type: DEPOSIT
+                description: null
+                reverses_txn_id: null
+                created_at: '2026-11-19T00:00:00Z'
+                entries:
+                - id: 100
+                  txn_id: 00000000-0000-4000-8000-000000000003
+                  wallet_id: 00000000-0000-4000-8000-000000000002
+                  type: DEPOSIT
+                  direction: DEBIT
+                  amount_minor: 100
+                  currency: INR
+                  created_at: '2026-11-19T00:00:00Z'
+                - id: 101
+                  txn_id: 00000000-0000-4000-8000-000000000003
+                  wallet_id: 00000000-0000-4000-8000-000000000001
+                  type: DEPOSIT
+                  direction: CREDIT
+                  amount_minor: 100
+                  currency: INR
+                  created_at: '2026-11-19T00:00:00Z'
+        '400':
+          $ref: '#/components/responses/MissingKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+        '422':
+          $ref: '#/components/responses/OperationRejected'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /transfers:
+    post:
+      operationId: createTransfer
+      summary: Transfer simulated funds idempotently
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+            example:
+              from_wallet_id: 00000000-0000-4000-8000-000000000001
+              to_wallet_id: 00000000-0000-4000-8000-000000000002
+              amount_minor: 100
+              currency: INR
+      responses:
+        '201':
+          description: Transfer simulated funds idempotently
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+            Idempotent-Replayed:
+              description: true when a stored response is replayed; optional otherwise. The mock is a
+                static fixture, not an idempotency implementation.
+              schema:
+                type: string
+                enum:
+                - 'true'
+                - 'false'
+              example: 'false'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+              example:
+                id: 00000000-0000-4000-8000-000000000003
+                type: TRANSFER
+                from_wallet_id: 00000000-0000-4000-8000-000000000001
+                to_wallet_id: 00000000-0000-4000-8000-000000000002
+                amount_minor: 100
+                currency: INR
+                description: null
+                created_at: '2026-11-19T00:00:00Z'
+        '400':
+          $ref: '#/components/responses/MissingKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+        '422':
+          $ref: '#/components/responses/OperationRejected'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /transfers/{id}:
+    get:
+      operationId: getTransfer
+      summary: Read transfer as sender or receiver owner
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceId'
+      responses:
+        '200':
+          description: Read transfer as sender or receiver owner
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transfer'
+              example:
+                id: 00000000-0000-4000-8000-000000000003
+                type: TRANSFER
+                from_wallet_id: 00000000-0000-4000-8000-000000000001
+                to_wallet_id: 00000000-0000-4000-8000-000000000002
+                amount_minor: 100
+                currency: INR
+                description: null
+                created_at: '2026-11-19T00:00:00Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /wallets/{id}/transactions:
+    get:
+      operationId: walletHistory
+      summary: Read owned wallet entries newest first
+      security:
+      - bearerAuth: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceId'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/BeforeId'
+      responses:
+        '200':
+          description: Read owned wallet entries newest first
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/History'
+              example:
+                entries:
+                - id: 101
+                  txn_id: 00000000-0000-4000-8000-000000000003
+                  wallet_id: 00000000-0000-4000-8000-000000000001
+                  type: TRANSFER
+                  direction: CREDIT
+                  amount_minor: 100
+                  currency: INR
+                  created_at: '2026-11-19T00:00:00Z'
+                next_before_id: null
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Validation'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /transactions/{id}/reverse:
+    post:
+      operationId: reverseTransaction
+      summary: Reverse an eligible transaction once
+      security:
+      - bearerAuth: []
+        adminKey: []
+      parameters:
+      - $ref: '#/components/parameters/ResourceId'
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReverseRequest'
+            example: {}
+      responses:
+        '201':
+          description: Reverse an eligible transaction once
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+            Idempotent-Replayed:
+              description: true when a stored response is replayed; optional otherwise. The mock is a
+                static fixture, not an idempotency implementation.
+              schema:
+                type: string
+                enum:
+                - 'true'
+                - 'false'
+              example: 'false'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+              example:
+                id: 00000000-0000-4000-8000-000000000003
+                type: REVERSAL
+                description: null
+                reverses_txn_id: 00000000-0000-4000-8000-000000000001
+                created_at: '2026-11-19T00:00:00Z'
+                entries:
+                - id: 100
+                  txn_id: 00000000-0000-4000-8000-000000000003
+                  wallet_id: 00000000-0000-4000-8000-000000000002
+                  type: REVERSAL
+                  direction: CREDIT
+                  amount_minor: 100
+                  currency: INR
+                  created_at: '2026-11-19T00:00:00Z'
+                - id: 101
+                  txn_id: 00000000-0000-4000-8000-000000000003
+                  wallet_id: 00000000-0000-4000-8000-000000000001
+                  type: REVERSAL
+                  direction: DEBIT
+                  amount_minor: 100
+                  currency: INR
+                  created_at: '2026-11-19T00:00:00Z'
+        '400':
+          $ref: '#/components/responses/MissingKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/AlreadyReversed'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+        '422':
+          $ref: '#/components/responses/OperationRejected'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+  /admin/reconcile:
+    get:
+      operationId: reconcile
+      summary: Check one read-only ledger snapshot
+      security:
+      - bearerAuth: []
+        adminKey: []
+      responses:
+        '200':
+          description: Check one read-only ledger snapshot
+          headers:
+            X-Request-ID:
+              description: Server-generated request UUID.
+              schema:
+                $ref: '#/components/schemas/ResourceId'
+              example: 00000000-0000-4000-8000-000000000003
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reconciliation'
+              example:
+                ok: true
+                checks:
+                  currencies_balanced: true
+                  transactions_valid: true
+                  wallet_balances_match: true
+                  entry_currencies_match: true
+                mismatches: []
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/Internal'
+        '503':
+          $ref: '#/components/responses/Busy'
+components:
+  schemas:
+    ResourceId:
+      type: string
+      format: uuid
+      pattern: ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+      example: 00000000-0000-4000-8000-000000000001
+    EntryCursor:
+      type: integer
+      format: int64
+      minimum: 1
+      description: Provisional history cursor for the auto-increment entry key in SRS Figure B-2 and A's
+        001 schema. Confirm the integer-key exception to the general UUID convention with A before freezing.
+      example: 101
+      maximum: 9223372036854775807
+    Currency:
+      type: string
+      enum:
+      - INR
+      - USD
+      - JPY
+    Operation:
+      type: string
+      enum:
+      - DEPOSIT
+      - TRANSFER
+      - REVERSAL
+    Amount:
+      type: integer
+      minimum: 1
+      maximum: 1000000000000
+      description: Integer minor units; booleans, strings and decimals are invalid.
+    Health:
+      type: object
+      additionalProperties: false
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - ok
+    UserRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - email
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Trim before storing.
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: Trim and store lowercase.
+    WalletRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - currency
+      properties:
+        currency:
+          $ref: '#/components/schemas/Currency'
+    DepositRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - amount_minor
+      properties:
+        amount_minor:
+          $ref: '#/components/schemas/Amount'
+    TransferRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - from_wallet_id
+      - to_wallet_id
+      - amount_minor
+      - currency
+      properties:
+        from_wallet_id:
+          $ref: '#/components/schemas/ResourceId'
+        to_wallet_id:
+          $ref: '#/components/schemas/ResourceId'
+        amount_minor:
+          $ref: '#/components/schemas/Amount'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        description:
+          type: string
+          maxLength: 200
+    ReverseRequest:
+      type: object
+      additionalProperties: false
+      required: []
+      properties: {}
+    UserCreated:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - email
+      - token
+      - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/ResourceId'
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        token:
+          type: string
+          description: Shown once. Never persist this value in logs.
+        created_at:
+          type: string
+          format: date-time
+    Wallet:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - user_id
+      - currency
+      - balance_minor
+      - is_system
+      - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/ResourceId'
+        user_id:
+          $ref: '#/components/schemas/ResourceId'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        balance_minor:
+          type: integer
+          format: int64
+          minimum: -9223372036854775808
+          maximum: 9223372036854775807
+        is_system:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    WalletList:
+      type: object
+      additionalProperties: false
+      required:
+      - wallets
+      properties:
+        wallets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallet'
+    Entry:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - txn_id
+      - wallet_id
+      - type
+      - direction
+      - amount_minor
+      - currency
+      - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/EntryCursor'
+        txn_id:
+          $ref: '#/components/schemas/ResourceId'
+        wallet_id:
+          $ref: '#/components/schemas/ResourceId'
+        type:
+          $ref: '#/components/schemas/Operation'
+        direction:
+          type: string
+          enum:
+          - DEBIT
+          - CREDIT
+        amount_minor:
+          $ref: '#/components/schemas/Amount'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        created_at:
+          type: string
+          format: date-time
+    Transaction:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - type
+      - description
+      - reverses_txn_id
+      - created_at
+      - entries
+      properties:
+        id:
+          $ref: '#/components/schemas/ResourceId'
+        type:
+          $ref: '#/components/schemas/Operation'
+        description:
+          type: string
+          nullable: true
+        reverses_txn_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        entries:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: '#/components/schemas/Entry'
+    Transfer:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - type
+      - from_wallet_id
+      - to_wallet_id
+      - amount_minor
+      - currency
+      - description
+      - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/ResourceId'
+        type:
+          type: string
+          enum:
+          - TRANSFER
+        from_wallet_id:
+          $ref: '#/components/schemas/ResourceId'
+        to_wallet_id:
+          $ref: '#/components/schemas/ResourceId'
+        amount_minor:
+          $ref: '#/components/schemas/Amount'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        description:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    History:
+      type: object
+      additionalProperties: false
+      required:
+      - entries
+      - next_before_id
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/Entry'
+        next_before_id:
+          type: integer
+          format: int64
+          minimum: 1
+          nullable: true
+    Reconciliation:
+      type: object
+      additionalProperties: false
+      required:
+      - ok
+      - checks
+      - mismatches
+      properties:
+        ok:
+          type: boolean
+        checks:
+          type: object
+          additionalProperties: false
+          required:
+          - currencies_balanced
+          - transactions_valid
+          - wallet_balances_match
+          - entry_currencies_match
+          properties:
+            currencies_balanced:
+              type: boolean
+            transactions_valid:
+              type: boolean
+            wallet_balances_match:
+              type: boolean
+            entry_currencies_match:
+              type: boolean
+        mismatches:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - check
+            - expected
+            - actual
+            properties:
+              check:
+                type: string
+              currency:
+                $ref: '#/components/schemas/Currency'
+              wallet_id:
+                $ref: '#/components/schemas/ResourceId'
+              txn_id:
+                $ref: '#/components/schemas/ResourceId'
+              expected: {}
+              actual: {}
+    Error:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          - details
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              description: Non-sensitive details or null.
+    InternalError:
+      type: object
+      additionalProperties: false
+      required:
+      - error
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+              enum:
+              - INTERNAL_ERROR
+            message:
+              type: string
+              enum:
+              - An internal error occurred.
+  parameters:
+    ResourceId:
+      name: id
+      in: path
+      required: true
+      schema:
+        $ref: '#/components/schemas/ResourceId'
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+        pattern: ^[A-Za-z0-9_.:-]+$
+      example: example-operation-key
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    BeforeId:
+      name: before_id
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/EntryCursor'
+  responses:
+    Unauthorized:
+      description: Missing or invalid bearer token, or wrong admin key.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAUTHENTICATED
+              message: Authentication is required.
+              details: null
+    Forbidden:
+      description: Caller does not own the resource.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: FORBIDDEN
+              message: Access is forbidden.
+              details: null
+    NotFound:
+      description: Resource does not exist.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NOT_FOUND
+              message: Resource not found.
+              details: null
+    MissingKey:
+      description: Idempotency-Key is missing or blank.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: IDEMPOTENCY_KEY_MISSING
+              message: Idempotency-Key is required.
+              details: null
+    EmailExists:
+      description: Email already registered.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: EMAIL_ALREADY_EXISTS
+              message: Email is already registered.
+              details: null
+    AlreadyReversed:
+      description: Original transaction was reversed once already.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: ALREADY_REVERSED
+              message: Transaction was already reversed.
+              details: null
+    Validation:
+      description: Invalid, missing or unknown parameter; duplicate wallet; invalid ID.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Request validation failed.
+              details: null
+    OperationRejected:
+      description: Validation or business rule rejects the operation.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            validation:
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Request validation failed.
+                  details: null
+            insufficient:
+              value:
+                error:
+                  code: INSUFFICIENT_FUNDS
+                  message: Balance is too low.
+                  details: null
+            currency:
+              value:
+                error:
+                  code: CURRENCY_MISMATCH
+                  message: Currencies differ.
+                  details: null
+            conflict:
+              value:
+                error:
+                  code: IDEMPOTENCY_CONFLICT
+                  message: Key conflicts with the original request.
+                  details: null
+            notReversible:
+              value:
+                error:
+                  code: NOT_REVERSIBLE
+                  message: A reversal cannot itself be reversed.
+                  details: null
+    TooLarge:
+      description: C01 body limit from the revised plan and supporting older SRS.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: PAYLOAD_TOO_LARGE
+              message: Request body exceeds 16 KiB.
+              details: null
+    Busy:
+      description: SQLite busy timeout elapsed; no application retry.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: DATABASE_BUSY
+              message: Database is busy. Try again later.
+              details: null
+    Internal:
+      description: Unexpected error; no exception, SQL or path details.
+      headers:
+        X-Request-ID:
+          description: Server-generated request UUID.
+          schema:
+            $ref: '#/components/schemas/ResourceId'
+          example: 00000000-0000-4000-8000-000000000003
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/InternalError'
+          example:
+            error:
+              code: INTERNAL_ERROR
+              message: An internal error occurred.
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque token
+    adminKey:
+      type: apiKey
+      in: header
+      name: X-Admin-Key
