@@ -1,8 +1,8 @@
 """Provisional C03 signatures and deterministic transaction ownership proof."""
 
-from dataclasses import FrozenInstanceError
-from datetime import datetime, timedelta, timezone
 import sqlite3
+from dataclasses import FrozenInstanceError
+from datetime import UTC, datetime, timedelta, timezone
 from uuid import UUID
 
 import pytest
@@ -10,7 +10,7 @@ import pytest
 c = pytest.importorskip("app.contracts", reason="Install backend or set PYTHONPATH=backend.")
 f = pytest.importorskip("app.contracts.fakes")
 IDS = [UUID("00000000-0000-4000-8000-00000000000" + str(i)) for i in range(1, 7)]
-NOW = datetime(2026, 11, 19, tzinfo=timezone.utc)
+NOW = datetime(2026, 11, 19, tzinfo=UTC)
 
 
 @pytest.fixture
@@ -84,18 +84,17 @@ def test_caller_context_rolls_back_posting_and_idempotency_fakes(database):
     wrapper = f.FakeRunIdempotent()
     assert isinstance(posting, c.PostTransaction)
     assert isinstance(wrapper, c.RunIdempotent)
-    with pytest.raises(RuntimeError, match="injected"):
-        with database.transaction() as connection:
-            connection.execute("INSERT INTO marker VALUES (2)")
+    with pytest.raises(RuntimeError, match="injected"), database.transaction() as connection:
+        connection.execute("INSERT INTO marker VALUES (2)")
 
-            def operation():
-                result = posting(connection, posting_request())
-                assert connection.in_transaction
-                return c.OperationResult(201, {"txn_id": str(result.txn_id)}, result.txn_id)
-
-            assert wrapper(connection, idempotency_request(), operation).status_code == 201
+        def operation():
+            result = posting(connection, posting_request())
             assert connection.in_transaction
-            raise RuntimeError("injected failure before API commit")
+            return c.OperationResult(201, {"txn_id": str(result.txn_id)}, result.txn_id)
+
+        assert wrapper(connection, idempotency_request(), operation).status_code == 201
+        assert connection.in_transaction
+        raise RuntimeError("injected failure before API commit")
     assert connection.execute("SELECT * FROM marker").fetchall() == []
     assert len(posting.calls) == len(wrapper.calls) == 1
     assert posting.calls[0][0] is wrapper.calls[0][0] is connection
@@ -112,10 +111,9 @@ def test_preconfigured_replay_does_not_invoke_operation(database):
 
 def test_injected_wrapper_failure_rolls_back_callers_work(database):
     wrapper = f.FakeRunIdempotent(failure=ValueError("injected"))
-    with pytest.raises(ValueError, match="injected"):
-        with database.transaction() as connection:
-            connection.execute("INSERT INTO marker VALUES (3)")
-            wrapper(connection, idempotency_request(), lambda: pytest.fail("not called"))
+    with pytest.raises(ValueError, match="injected"), database.transaction() as connection:
+        connection.execute("INSERT INTO marker VALUES (3)")
+        wrapper(connection, idempotency_request(), lambda: pytest.fail("not called"))
     assert connection.execute("SELECT * FROM marker").fetchall() == []
 
 
@@ -128,9 +126,8 @@ def test_fakes_require_an_existing_transaction(database):
 
 def test_nested_context_does_not_end_outer_transaction(database):
     with database.transaction() as connection:
-        with pytest.raises(RuntimeError, match="Nested"):
-            with database.transaction():
-                pytest.fail("nested transaction must not start")
+        with pytest.raises(RuntimeError, match="Nested"), database.transaction():
+            pytest.fail("nested transaction must not start")
         assert connection.in_transaction
 
 
@@ -142,9 +139,11 @@ def test_read_context_is_a_transaction(database):
 
 
 def test_read_context_forbids_writes_and_restores_subsequent_write_context(database):
-    with pytest.raises(sqlite3.OperationalError, match="readonly"):
-        with database.transaction(write=False) as connection:
-            connection.execute("INSERT INTO marker VALUES (9)")
+    with (
+        pytest.raises(sqlite3.OperationalError, match="readonly"),
+        database.transaction(write=False) as connection,
+    ):
+        connection.execute("INSERT INTO marker VALUES (9)")
     with database.transaction() as connection:
         connection.execute("INSERT INTO marker VALUES (10)")
     assert connection.execute("SELECT * FROM marker").fetchall() == [(10,)]
