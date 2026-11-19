@@ -21,3 +21,14 @@ jobs:
         run: python -m build backend --outdir "$RUNNER_TEMP/ledger-api-dist"
       - name: Test the API and existing migration tests
         run: python -m pytest -q backend/tests tests
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install the pinned Prism mock
+        run: npm --prefix tools/api-mock install --ignore-scripts --no-audit --no-fund
+      - name: Exercise every mock operation
+        run: |
+          npm --prefix tools/api-mock start > "$RUNNER_TEMP/prism.log" 2>&1 &
+          mock_pid=$!
+          trap 'kill "$mock_pid" 2>/dev/null || true' EXIT
+          python scripts/check_api_mock.py || { cat "$RUNNER_TEMP/prism.log"; exit 1; }
