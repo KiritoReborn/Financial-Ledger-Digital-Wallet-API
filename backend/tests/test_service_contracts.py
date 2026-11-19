@@ -26,7 +26,7 @@ def posting_request():
 
 
 def posted():
-    return c.PostedTransaction(IDS[2], IDS[3], IDS[4], NOW)
+    return c.PostedTransaction(IDS[2], NOW)
 
 
 def idempotency_request():
