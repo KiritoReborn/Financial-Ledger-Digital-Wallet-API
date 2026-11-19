@@ -57,8 +57,6 @@ class PostingRequest:
 @dataclass(frozen=True)
 class PostedTransaction:
     txn_id: UUID
-    debit_entry_id: UUID
-    credit_entry_id: UUID
     created_at: datetime
 
 
