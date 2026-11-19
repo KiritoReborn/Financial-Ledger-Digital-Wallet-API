@@ -22,3 +22,4 @@ source: "User-directed incremental C01 work"
 | 2026-11-19 | C | Added C03 provisional provider/service protocols and deterministic fakes under issue #12. All 95 local tests passed; transaction ownership and replay/failure cases covered. | [[2026-11-19-c03-contracts]] |
 
 This is a manual development/AI-session record, not a brain-ingest research run.
+| 2026-11-19 | C | Added the C02 OpenAPI proposal and static Prism fixtures under issue #14; 125 local tests passed, two full-validator cases await CI. | [[2026-11-19-c02-api-contract]] |
