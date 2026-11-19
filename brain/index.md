@@ -14,6 +14,8 @@ Open `brain/` as the Obsidian vault. Use `inbox/` for material to review, `proje
 
 Harshith's database work is recorded in [[projects/h02-database-migration|H02 database migration]] and [[archive/2026-11-18-h02-ai-session|the H02 AI session]].
 
+H03 provider and startup evidence is in [[projects/h03-sqlite-provider]].
+
 Current C increment: [[2026-11-19-c01-health]]. Actual runs: [[log]].
 
 Existing team reference notes:

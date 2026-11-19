@@ -17,5 +17,6 @@ source: "User-directed incremental C01 work"
 | 2026-11-19 | A | Recorded the published Migration 001 schema and its supporting research in the vault. | [[projects/h02-database-migration]], [[resources/sqlite-schema-constraints]] |
 | 2026-11-20 | A | Committed the H02 runner and tests, integrated current main, and verified 78 tests plus Ruff. A fresh SQLite file recorded migrations 1 and 2 once each across two CLI runs. | [[projects/h02-database-migration]], [[archive/2026-11-18-h02-ai-session]] |
 | 2026-11-20 | A | Completed the H01 repository setup, corrected the clean-clone commands, and documented review and ownership rules. | [Contributor guide](../AGENTS.md), [setup](../README.md) |
+| 2026-11-20 | A | Added the H03 SQLite provider, packaged the migration runner, and tested locking, read snapshots and transaction boundaries. | [[projects/h03-sqlite-provider]] |
 
 This is a manual development/AI-session record, not a brain-ingest research run.
