@@ -34,7 +34,7 @@ def request_validator(name):
 
 def test_full_openapi_document_is_valid():
     validator = pytest.importorskip("openapi_spec_validator", reason="Full validator runs in CI.")
-    validator.validate_spec(SPEC)
+    validator.validate(SPEC)
 
 
 def test_all_final_srs_paths_and_methods_are_documented():

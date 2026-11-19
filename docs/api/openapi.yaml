@@ -635,7 +635,6 @@ components:
     ReverseRequest:
       type: object
       additionalProperties: false
-      required: []
       properties: {}
     UserCreated:
       type: object
