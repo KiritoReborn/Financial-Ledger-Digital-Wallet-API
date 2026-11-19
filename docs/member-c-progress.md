@@ -8,7 +8,7 @@ work sessions and review units, not fabricated calendar-day progress.
 | --- | --- | --- |
 | C01 | API framework, health, CORS, errors, IDs and body limit | Health PR #9, CORS PR #10 and request-safety PR #11 await review. Shared-provider integration awaits A/H03. |
 | C02 | Full OpenAPI 3.x contract and Prism mock | Can proceed; covers contracts for all owners without implementing their endpoints. |
-| C03 | Transaction/posting/idempotency contracts, Clock/IdProvider and fakes | Can proceed as a provisional interface version; peer agreement required before M0 freeze. |
+| C03 | Transaction/posting/idempotency contracts, Clock/IdProvider and fakes | v0.1 implemented with 15 passing contract cases; issue #12 and PR #13 track review and A/B/D agreement. Not formally frozen. |
 | C04 | Balanced posting for deposit, transfer and reversal | Consume A's actual migration 001 and transaction provider; never commit inside posting. |
 | C05 | Failure-injection, rollback and crash harness | Depends on C04 and shared transaction integration. |
 | C06 | Owner-checked transfer reads and paginated history | Depends on A's auth/provider, stable schema and posting data. |
