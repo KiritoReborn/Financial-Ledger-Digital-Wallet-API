@@ -23,7 +23,7 @@ def request(method, path, body=None, expected=200, prefer=None):
     data = None if body is None else json.dumps(body).encode()
     call = Request(BASE + path, data=data, headers=headers, method=method)
     try:
-        response = urlopen(call, timeout=3)  # noqa: S310 - fixed local mock URL
+        response = urlopen(call, timeout=3)
     except HTTPError as error:
         response = error
     with response:
