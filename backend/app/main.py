@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .api.health import router as health_router
 from .health import DatabaseReadiness, SqliteReadiness
+from .http import RequestContextMiddleware, RequestSafetyMiddleware, install_error_handlers
 
 
 def _validate_frontend_origin(value: str) -> str:
@@ -56,6 +57,8 @@ def create_app(
         if frontend_origin is not None
         else os.environ.get("FRONTEND_ORIGIN", "http://localhost:5173")
     )
+    install_error_handlers(application)
+    application.add_middleware(RequestSafetyMiddleware)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=[origin],
@@ -70,5 +73,6 @@ def create_app(
         ],
         expose_headers=["Idempotent-Replayed", "X-Request-ID"],
     )
+    application.add_middleware(RequestContextMiddleware)
     application.include_router(health_router)
     return application
