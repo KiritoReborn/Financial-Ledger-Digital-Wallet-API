@@ -1,7 +1,7 @@
-# Member C - API health and CORS increments
+# Member C - API framework increments
 
-This branch adds only `GET /health` from C01, using final-SRS EI-SW-1 and
-safe errors from NFR-SEC-7. Existing team CI, migrations, tests and research
+These branches add C01 health, CORS and HTTP request boundaries, using final-SRS
+EI-SW-1, EI-CM-1 and safe errors from NFR-SEC-7. Existing team CI, migrations, tests and research
 notes are reused. Health PR #9 is the base for the separate CORS increment.
 
 ## Install and run
@@ -13,7 +13,7 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e "./backend[dev]"
 $env:DATABASE_PATH = "C:\path\to\existing\ledger.sqlite3"
 $env:FRONTEND_ORIGIN = "http://localhost:5173"
-.\.venv\Scripts\python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
+.\.venv\Scripts\python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
 `DATABASE_PATH` defaults to `data/ledger.sqlite3`. The database must already
@@ -74,3 +74,25 @@ origins, methods and headers receive HTTP 400. Non-browser requests without an
 Origin header continue to work. Cookie credentials are not enabled; frontend
 authentication will use the documented bearer header. CORS does not replace
 the later authentication and ownership checks.
+
+## Request boundaries (C01)
+
+Every HTTP response, including preflight and errors, gets a new server-generated
+UUID v4 X-Request-ID. Incoming IDs are replaced. Handlers can read the value
+from request.state.request_id. The request logger writes one JSON line with the
+ID, method, route template, status and elapsed milliseconds. It omits raw URL
+parameters, unknown path values, headers, bodies and exception messages. Use
+the documented --no-access-log option to avoid a second raw-URL server log.
+
+Expected service failures may raise app.http.ApiError with a fixed message and
+non-sensitive details. Framework 404/405 and validation errors use the shared
+JSON error envelope. Validation details contain only locations and error types;
+internal errors contain only INTERNAL_ERROR and a generic message. Unexpected
+SQLite busy errors return DATABASE_BUSY without an application retry loop.
+
+POST bodies are limited to 16 KiB, counting received bytes before a handler is
+invoked, including chunked bodies and bodies with understated Content-Length.
+Oversize bodies return 413 PAYLOAD_TOO_LARGE. The revised C01 plan requires this
+limit; its numeric value comes from the older 47-page SRS. Error envelopes and
+safe handling follow the submitted 14-page SRS. No authentication, financial
+transaction or other member's endpoint is implemented here.

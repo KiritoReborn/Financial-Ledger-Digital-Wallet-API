@@ -17,4 +17,6 @@ source: "User-directed incremental C01 work"
 
 | 2026-11-19 | C | Added configured frontend-origin policy and 28 CORS cases on raghu/api-cors; opened PR #10 over health PR #9. All 44 local tests and both GitHub CI workflows passed. Human review pending. | [[2026-11-19-c01-cors]] |
 
+| 2026-11-19 | C | Added shared API error handling, generated request IDs, safe structured request logs and the C01 body limit. All 80 local tests passed; publication and CI recorded in the linked note. | [[2026-11-19-c01-request-safety]] |
+
 This is a manual development/AI-session record, not a brain-ingest research run.
