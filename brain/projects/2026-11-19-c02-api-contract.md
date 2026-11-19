@@ -39,4 +39,17 @@ into the health branch rather than main. PR #11 must target main and include
 the still-unintegrated CORS changes; later PRs retain their dependency bases.
 No human review, M0 freeze or production-provider integration is claimed here.
 
+CI found an unused lint suppression, an OpenAPI 3.0 empty-required-list error
+and an unavailable transitive dependency in Prism CLI 5.14.0. The suppression
+and invalid keyword were removed; the validator's supported entry point is
+used. All 127 Python cases passed in CI after that correction. Prism is now
+pinned to official 5.15.11; its installation and HTTP checks are rerun before
+marking the PR ready. These corrections disable no checks.
+
+Both workflows passed at 0c7fd8d: [API validation and all Prism operations](https://github.com/harshith-raj-06/Financial-Ledger-Digital-Wallet-API/actions/runs/44541634955)
+and [team lint, tests and secret scan](https://github.com/harshith-raj-06/Financial-Ledger-Digital-Wallet-API/actions/runs/44541635147).
+All 127 Python tests passed in API CI, including the two unavailable local
+validators. The final evidence-note commit triggers another run. merge-tree
+also passed against main e768e4c and the C03 base without conflicts.
+
 This development record does not count toward C10's five research notes.

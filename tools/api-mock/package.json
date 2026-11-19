@@ -7,7 +7,7 @@
     "start": "prism mock ../../docs/api/openapi.yaml --host 127.0.0.1 --port 4010"
   },
   "devDependencies": {
-    "@stoplight/prism-cli": "5.14.0"
+    "@stoplight/prism-cli": "5.15.11"
   },
   "engines": { "node": ">=18" }
 }
