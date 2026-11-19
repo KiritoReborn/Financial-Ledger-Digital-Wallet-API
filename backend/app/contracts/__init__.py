@@ -8,7 +8,7 @@ import sqlite3
 from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal, Protocol, runtime_checkable
 from uuid import UUID, uuid4
 
@@ -100,7 +100,7 @@ class RunIdempotent(Protocol):
 
 class UtcClock:
     def now(self) -> datetime:
-        return datetime.now(timezone.utc)
+        return datetime.now(UTC)
 
 
 class UuidIds:
