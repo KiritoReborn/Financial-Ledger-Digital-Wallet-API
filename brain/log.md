@@ -25,3 +25,4 @@ source: "User-directed incremental C01 work"
 
 This is a manual development/AI-session record, not a brain-ingest research run.
 | 2026-11-19 | C | Added the C02 OpenAPI proposal and static Prism fixtures under issue #14; 125 local tests passed, two full-validator cases await CI. | [[2026-11-19-c02-api-contract]] |
+| 2026-11-20 | C | Tested posting against the merged migrations. All 241 Python tests passed. A separate 50-writer run produced 33 transfers and 17 insufficient-funds rejections. | [[projects/2026-11-20-c04-posting]] |

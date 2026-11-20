@@ -34,7 +34,7 @@ def _uuid4(value):
 
 
 def _validate(request: PostingRequest):
-    if request.kind not in {"DEPOSIT", "TRANSFER", "REVERSAL"}:
+    if request.kind not in ("DEPOSIT", "TRANSFER", "REVERSAL"):
         _reject("VALIDATION_ERROR", "Invalid transaction type.")
     if not _uuid4(request.debit_wallet_id) or not _uuid4(request.credit_wallet_id):
         _reject("VALIDATION_ERROR", "Wallet IDs must be UUID v4.")
@@ -42,7 +42,7 @@ def _validate(request: PostingRequest):
         _reject("VALIDATION_ERROR", "Wallets must differ.")
     if type(request.amount_minor) is not int or not 1 <= request.amount_minor <= MAX_AMOUNT:
         _reject("VALIDATION_ERROR", "Amount must be an integer from 1 through 10^12.")
-    if request.currency not in {"INR", "USD", "JPY"}:
+    if request.currency not in ("INR", "USD", "JPY"):
         _reject("VALIDATION_ERROR", "Unsupported currency.")
     if request.description is not None and (
         not isinstance(request.description, str) or len(request.description) > 200
@@ -119,11 +119,8 @@ class LedgerPoster:
         if request.kind == "REVERSAL":
             _validate_reversal(connection, request)
 
-        debit_balance = debit[1] - request.amount_minor
-        credit_balance = credit[1] + request.amount_minor
-        if not debit[2] and debit_balance < 0:
-            _reject("INSUFFICIENT_FUNDS", "Balance is too low.")
-        if not MIN_INT64 <= debit_balance <= MAX_INT64 or not MIN_INT64 <= credit_balance <= MAX_INT64:
+        # SQLite promotes overflowing integer arithmetic to REAL.
+        if debit[1] - request.amount_minor < MIN_INT64:
             _reject("VALIDATION_ERROR", "Resulting balance exceeds the integer range.")
 
         transaction_id = self.ids.new_id()
@@ -133,30 +130,50 @@ class LedgerPoster:
         if created_at.tzinfo is None or created_at.utcoffset() != timedelta(0):
             raise RuntimeError("Clock must return timezone-aware UTC.")
         timestamp = created_at.isoformat().replace("+00:00", "Z")
+        debited = connection.execute(
+            "UPDATE wallets SET balance_minor = balance_minor - ? "
+            "WHERE id = ? AND (is_system = 1 OR balance_minor >= ?)",
+            (request.amount_minor, str(request.debit_wallet_id), request.amount_minor),
+        )
+        if debited.rowcount != 1:
+            _reject("INSUFFICIENT_FUNDS", "Balance is too low.")
+        if credit[1] + request.amount_minor > MAX_INT64:
+            _reject("VALIDATION_ERROR", "Resulting balance exceeds the integer range.")
+        credited = connection.execute(
+            "UPDATE wallets SET balance_minor = balance_minor + ? WHERE id = ?",
+            (request.amount_minor, str(request.credit_wallet_id)),
+        )
+        if credited.rowcount != 1:
+            raise RuntimeError("Expected to update the credit wallet.")
+
         connection.execute(
             "INSERT INTO transactions (id, type, reverses_txn_id, description, created_at) "
             "VALUES (?, ?, ?, ?, ?)",
-            (str(transaction_id), request.kind,
-             str(request.reverses_txn_id) if request.reverses_txn_id else None,
-             request.description, timestamp),
+            (
+                str(transaction_id),
+                request.kind,
+                str(request.reverses_txn_id) if request.reverses_txn_id else None,
+                request.description,
+                timestamp,
+            ),
         )
         connection.executemany(
             "INSERT INTO ledger_entries "
             "(txn_id, wallet_id, direction, amount_minor, currency, created_at) "
             "VALUES (?, ?, ?, ?, ?, ?)",
-            [(str(transaction_id), str(wallet_id), direction, request.amount_minor,
-              request.currency, timestamp) for wallet_id, direction in (
-                  (request.debit_wallet_id, "DEBIT"), (request.credit_wallet_id, "CREDIT")
-              )],
+            [
+                (
+                    str(transaction_id),
+                    str(wallet_id),
+                    direction,
+                    request.amount_minor,
+                    request.currency,
+                    timestamp,
+                )
+                for wallet_id, direction in (
+                    (request.debit_wallet_id, "DEBIT"),
+                    (request.credit_wallet_id, "CREDIT"),
+                )
+            ],
         )
-        for wallet_id, previous, balance in (
-            (request.debit_wallet_id, debit[1], debit_balance),
-            (request.credit_wallet_id, credit[1], credit_balance),
-        ):
-            updated = connection.execute(
-                "UPDATE wallets SET balance_minor = ? WHERE id = ? AND balance_minor = ?",
-                (balance, str(wallet_id), previous),
-            )
-            if updated.rowcount != 1:
-                raise RuntimeError("Wallet changed outside the expected write transaction.")
         return PostedTransaction(transaction_id, created_at)

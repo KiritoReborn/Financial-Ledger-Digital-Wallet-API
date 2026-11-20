@@ -14,9 +14,8 @@ Open `brain/` as the Obsidian vault. Use `inbox/` for material to review, `proje
 
 Harshith's database work is recorded in [[projects/h02-database-migration|H02 database migration]] and [[archive/2026-11-18-h02-ai-session|the H02 AI session]].
 
-Current C increment: [[2026-11-19-c01-health]]. Actual runs: [[log]].
-
-Next independent review increment: [[2026-11-19-c01-cors]].
+Member C is testing [[projects/2026-11-20-c04-posting|balanced posting]] against
+the merged migrations. See [[log]] for earlier increments.
 
 Existing team reference notes:
 - [[sqlite-immutability-triggers]]
