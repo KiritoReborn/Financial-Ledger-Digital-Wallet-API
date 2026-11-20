@@ -15,7 +15,7 @@ Open `brain/` as the Obsidian vault. Use `inbox/` for material to review, `proje
 ## Database work
 
 - [[projects/h02-database-migration|H02 · Schema and migrations]]
-- [[projects/h03-sqlite-provider|H03 · Startup and transactions]]
+- [[projects/h03-sqlite-provider|EI-SW-3 · SQLite connections per request]]
 - [[archive/2026-11-18-h02-ai-session|H02 session notes]]
 
 Current C increment: [[2026-11-19-c01-health]]. Actual runs: [[log]].

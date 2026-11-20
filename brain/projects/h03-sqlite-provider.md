@@ -1,5 +1,6 @@
 ---
-title: H03 SQLite provider
+title: EI-SW-3 — SQLite connections per request
+work_package: H03
 author: "Harshith (Member A), AI-assisted"
 date: "2026-11-20"
 category: projects
@@ -8,15 +9,15 @@ requirements: [EI-SW-3, FR-3.1, FR-3.4, DI-1]
 source: "Final SRS sections 3.3, 4.3 and 6.2 and revised early handover plan H03"
 ---
 
-# H03 SQLite provider
+# EI-SW-3 — SQLite connections per request
 
 Related: [[projects/h02-database-migration|Migration 001]] · [[sqlite-read-only-transaction-snapshots|Read snapshots]]
 
-## First boot and restart
+## DI-1 · Database creation on first start
 
 Start the API with `DATABASE_PATH` pointing into a new directory. Startup creates the directory and database, enables WAL, then applies 001 and 002. On the second boot the same user row is still there and the version list is still `[1, 2]`. A corrupt file stops startup before the app serves requests.
 
-## What a handler owns
+## FR-3.1 and FR-3.4 · Write transactions and lock timeout
 
 Open `request.app.state.database.transaction()` once. Pass that connection to posting and idempotency so a failure rolls back both. `BEGIN IMMEDIATE` takes the write lock on entry. SQLite waits up to five seconds for another writer. For history and health, use `transaction(write=False)` to keep a read-only snapshot.
 
