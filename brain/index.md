@@ -1,6 +1,6 @@
 ---
 title: "Financial Ledger second brain"
-author: "P. Jaya Raghunandhan Reddy (C), AI-assisted"
+author: "P. Jaya Raghunandhan Reddy (C)"
 date: "2026-11-19"
 category: "projects"
 tags: ["index", "progress"]
@@ -8,7 +8,7 @@ requirements: ["SB-1", "SB-5", "AI-3"]
 source: "Final SRS section 6.3; existing team brain"
 ---
 
-# Financial Ledger second brain
+# Financial Ledger second brain (AI-assisted)
 
 Open `brain/` as the Obsidian vault. Use `inbox/` for material to review, `projects/` for active work, `areas/` for ongoing responsibilities, `resources/` for references, and `archive/` for completed records.
 

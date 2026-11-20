@@ -1,7 +1,7 @@
 ---
 title: EI-SW-3 — SQLite connections per request
 work_package: H03
-author: "Harshith (Member A), AI-assisted"
+author: "Harshith (Member A)"
 date: "2026-11-20"
 category: projects
 tags: [h03, sqlite]
@@ -9,7 +9,7 @@ requirements: [EI-SW-3, FR-3.1, FR-3.4, DI-1]
 source: "Final SRS sections 3.3, 4.3 and 6.2 and revised early handover plan H03"
 ---
 
-# EI-SW-3 — SQLite connections per request
+# EI-SW-3 — SQLite connections per request (AI-assisted)
 
 Related: [[projects/h02-database-migration|Migration 001]] · [[sqlite-read-only-transaction-snapshots|Read snapshots]]
 
