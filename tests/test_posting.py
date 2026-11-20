@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
+
 from db.migrate import apply_migrations
 
 posting = pytest.importorskip("app.posting")
@@ -96,9 +97,8 @@ def test_posted_entries_are_immutable(ledger):
     ],
 )
 def test_api_boundary_translates_posting_errors_after_rollback(ledger, scenario, status, code):
-    from fastapi.testclient import TestClient
-
     from app.main import create_app
+    from fastapi.testclient import TestClient
 
     connection, poster, path = ledger
     operation = request(amount_minor=1001)
