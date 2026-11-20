@@ -43,4 +43,4 @@ The CLI check recorded versions 1 and 2 once each, found six application tables,
 
 The feature branch is available for H02 review. [Compare with main](https://github.com/harshith-raj-06/SE-Project/compare/main...feat/database-schema-001)
 
-Related notes [[resources/sqlite-schema-constraints|schema constraints]], [[resources/sqlite-migration-transactions|migration transactions]], and [[archive/2026-11-18-h02-ai-session|AI session]].
+Related notes [[resources/sqlite-schema-constraints|schema constraints]] and [[resources/sqlite-migration-transactions|migration transactions]].
