@@ -12,9 +12,11 @@ source: "Final SRS section 6.3; existing team brain"
 
 Open `brain/` as the Obsidian vault. Use `inbox/` for material to review, `projects/` for active work, `areas/` for ongoing responsibilities, `resources/` for references, and `archive/` for completed records.
 
-Harshith's database work is recorded in [[projects/h02-database-migration|H02 database migration]] and [[archive/2026-11-18-h02-ai-session|the H02 AI session]].
+## Database work
 
-H03 provider and startup evidence is in [[projects/h03-sqlite-provider]].
+- [[projects/h02-database-migration|H02 · Schema and migrations]]
+- [[projects/h03-sqlite-provider|H03 · Startup and transactions]]
+- [[archive/2026-11-18-h02-ai-session|H02 session notes]]
 
 Current C increment: [[2026-11-19-c01-health]]. Actual runs: [[log]].
 

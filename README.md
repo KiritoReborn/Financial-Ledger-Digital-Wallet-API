@@ -29,12 +29,10 @@ cp .env.example .env
 set -a
 source .env
 set +a
-mkdir -p "$(dirname "$DATABASE_PATH")"
-python -m db.migrate "$DATABASE_PATH"
 python -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port "$PORT"
 ```
 
-From a second terminal, run `curl http://127.0.0.1:8000/health` (adjust the port if changed). A healthy database returns `{"status":"ok"}`. To run the local checks, activate the same environment and run `ruff check .` and `python -m pytest -q backend/tests tests`.
+Startup creates the database at `DATABASE_PATH` and applies pending migrations. From a second terminal, run `curl http://127.0.0.1:8000/health` (adjust the port if changed). A healthy database returns `{"status":"ok"}`. To run the local checks, activate the same environment and run `ruff check .` and `python -m pytest -q backend/tests tests`.
 
 ## Important Notices
 

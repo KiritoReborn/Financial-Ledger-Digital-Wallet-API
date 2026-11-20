@@ -10,8 +10,18 @@ source: "Final SRS sections 3.3, 4.3 and 6.2 and revised early handover plan H03
 
 # H03 SQLite provider
 
-`SqliteDatabase.initialize()` enables WAL and calls the runner from [[projects/h02-database-migration]]. The caller opens one transaction per request and passes its connection to each service. Writers reserve the lock at entry. Readers keep a read-only snapshot. SQLite owns the five-second busy wait.
+Related: [[projects/h02-database-migration|Migration 001]] · [[sqlite-read-only-transaction-snapshots|Read snapshots]]
 
-The AI-assisted provider tests check the four connection settings, closure, commit, rollback, a reader overlapping a writer, and writer contention. The backend wheel includes the runner and SQL files for use outside a checkout. API startup integration is the next increment.
+## First boot and restart
 
-[Provider](../../backend/app/database.py) · [Transaction tests](../../backend/tests/test_database.py)
+Start the API with `DATABASE_PATH` pointing into a new directory. Startup creates the directory and database, enables WAL, then applies 001 and 002. On the second boot the same user row is still there and the version list is still `[1, 2]`. A corrupt file stops startup before the app serves requests.
+
+## What a handler owns
+
+Open `request.app.state.database.transaction()` once. Pass that connection to posting and idempotency so a failure rolls back both. `BEGIN IMMEDIATE` takes the write lock on entry. SQLite waits up to five seconds for another writer. For history and health, use `transaction(write=False)` to keep a read-only snapshot.
+
+- [x] Check foreign keys, FULL synchronization, WAL and the 5000 ms timeout on fresh connections.
+- [x] Restart the API against the same file and check the stored data.
+- [ ] Run a real posting call with Raghu when C04 is ready.
+
+[Provider](../../backend/app/database.py) · [Lock and rollback tests](../../backend/tests/test_database.py) · [Restart test](../../backend/tests/test_api_health.py)
