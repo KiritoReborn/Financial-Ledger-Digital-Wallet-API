@@ -23,9 +23,9 @@ jobs:
         run: python -m pytest -q backend/tests tests
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24.19.0"
       - name: Install the pinned Prism mock
-        run: npm --prefix tools/api-mock install --ignore-scripts --no-audit --no-fund
+        run: npm --prefix tools/api-mock ci --ignore-scripts --no-audit --no-fund
       - name: Exercise every mock operation
         run: |
           npm --prefix tools/api-mock start > "$RUNNER_TEMP/prism.log" 2>&1 &

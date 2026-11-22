@@ -49,9 +49,14 @@ def install_error_handlers(application: FastAPI) -> None:
         return error_response(error.status, error.code, error.message, error.details)
 
     async def validation_error(request: Request, error: RequestValidationError):
-        # Do not echo invalid input, validator messages or exception contexts.
-        details = [{"location": list(item["loc"]), "code": item["type"]}
-                   for item in error.errors()]
+        # Extra field names come from the payload, unlike declared field names.
+        details = [
+            {
+                "location": list(item["loc"][:1] if item["type"] == "extra_forbidden" else item["loc"]),
+                "code": item["type"],
+            }
+            for item in error.errors()
+        ]
         return error_response(422, "VALIDATION_ERROR", "Request validation failed.", details)
 
     async def http_error(request: Request, error: HTTPException):
@@ -121,7 +126,8 @@ class RequestSafetyMiddleware:
                             scope, receive, track_start
                         )
                         return
-                    chunks.append(chunk)
+                    if chunk:
+                        chunks.append(chunk)
                     if not message.get("more_body", False):
                         break
                 body = b"".join(chunks)

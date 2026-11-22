@@ -28,8 +28,9 @@ def resolve(value):
 
 
 def request_validator(name):
-    return jsonschema.Draft7Validator(resolve(SPEC["components"]["schemas"][name]),
-                                      format_checker=jsonschema.FormatChecker())
+    validator = pytest.importorskip("openapi_schema_validator").OAS30Validator
+    return validator(resolve(SPEC["components"]["schemas"][name]),
+                     format_checker=validator.FORMAT_CHECKER)
 
 
 def test_full_openapi_document_is_valid():
@@ -81,13 +82,43 @@ def test_idempotency_headers_only_belong_to_the_three_financial_writes():
     assert actual == expected
 
 
+def test_invalid_path_ids_have_a_documented_validation_error():
+    for path, _, operation in OPERATIONS:
+        if "{id}" in path and "requestBody" not in operation:
+            response = resolve(operation["responses"]["422"])
+            assert response["content"]["application/json"]["example"]["error"]["code"] == "VALIDATION_ERROR"
+
+
+@pytest.mark.parametrize("path,domain_errors", [
+    ("/wallets/{id}/deposit", set()),
+    ("/transfers", {"INSUFFICIENT_FUNDS", "CURRENCY_MISMATCH"}),
+    ("/transactions/{id}/reverse", {"INSUFFICIENT_FUNDS", "NOT_REVERSIBLE"}),
+])
+def test_financial_writes_only_offer_their_applicable_422_fixtures(path, domain_errors):
+    operation = SPEC["paths"][path]["post"]
+    examples = resolve(operation["responses"]["422"])["content"]["application/json"]["examples"]
+    assert {example["value"]["error"]["code"] for example in examples.values()} == {
+        "VALIDATION_ERROR", "IDEMPOTENCY_CONFLICT", *domain_errors
+    }
+
+
+def test_reconciliation_mismatches_identify_the_affected_currency_wallet_or_transaction():
+    validator = request_validator("Reconciliation")
+    report = {"ok": False, "checks": {"currencies_balanced": False, "transactions_valid": True,
+              "wallet_balances_match": True, "entry_currencies_match": True}, "mismatches": []}
+    mismatch = {"check": "currencies_balanced", "expected": 100, "actual": 99}
+    assert not validator.is_valid({**report, "mismatches": [mismatch]})
+    for identifier in ({"currency": "INR"}, {"wallet_id": ID}, {"txn_id": ID}):
+        assert validator.is_valid({**report, "mismatches": [{**mismatch, **identifier}]})
+
+
 @pytest.mark.parametrize("name", ["UserRequest", "WalletRequest", "DepositRequest", "TransferRequest", "ReverseRequest"])
 def test_request_objects_reject_unknown_fields(name):
     schema = SPEC["components"]["schemas"][name]
     assert schema["additionalProperties"] is False
 
 
-@pytest.mark.parametrize("value", [0, -1, 1.5, True, "100", 10**12 + 1])
+@pytest.mark.parametrize("value", [0, -1, 1.0, 1.5, True, "100", 10**12 + 1])
 def test_amount_contract_rejects_invalid_money_values(value):
     assert not request_validator("DepositRequest").is_valid({"amount_minor": value})
 
@@ -98,7 +129,8 @@ def test_amount_contract_accepts_valid_boundaries(value):
 
 
 def test_transfer_id_and_currency_contract_rejects_bad_values():
-    valid = {"from_wallet_id": ID, "to_wallet_id": ID, "amount_minor": 1, "currency": "INR"}
+    valid = {"from_wallet_id": ID, "to_wallet_id": "00000000-0000-4000-8000-000000000002",
+             "amount_minor": 1, "currency": "INR"}
     validator = request_validator("TransferRequest")
     assert validator.is_valid(valid)
     assert not validator.is_valid({**valid, "from_wallet_id": "not-a-uuid"})

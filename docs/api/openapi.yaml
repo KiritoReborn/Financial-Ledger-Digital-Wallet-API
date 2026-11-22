@@ -189,6 +189,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Validation'
         '500':
           $ref: '#/components/responses/Internal'
         '503':
@@ -233,22 +235,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/Transaction'
               example:
-                id: 00000000-0000-4000-8000-000000000003
+                id: 00000000-0000-4000-8000-000000000004
                 type: DEPOSIT
                 description: null
                 reverses_txn_id: null
                 created_at: '2026-11-19T00:00:00Z'
                 entries:
                 - id: 100
-                  txn_id: 00000000-0000-4000-8000-000000000003
-                  wallet_id: 00000000-0000-4000-8000-000000000002
+                  txn_id: 00000000-0000-4000-8000-000000000004
+                  wallet_id: 00000000-0000-4000-8000-000000000006
                   type: DEPOSIT
                   direction: DEBIT
                   amount_minor: 100
                   currency: INR
                   created_at: '2026-11-19T00:00:00Z'
                 - id: 101
-                  txn_id: 00000000-0000-4000-8000-000000000003
+                  txn_id: 00000000-0000-4000-8000-000000000004
                   wallet_id: 00000000-0000-4000-8000-000000000001
                   type: DEPOSIT
                   direction: CREDIT
@@ -266,7 +268,7 @@ paths:
         '413':
           $ref: '#/components/responses/TooLarge'
         '422':
-          $ref: '#/components/responses/OperationRejected'
+          $ref: '#/components/responses/DepositRejected'
         '500':
           $ref: '#/components/responses/Internal'
         '503':
@@ -332,7 +334,7 @@ paths:
         '413':
           $ref: '#/components/responses/TooLarge'
         '422':
-          $ref: '#/components/responses/OperationRejected'
+          $ref: '#/components/responses/TransferRejected'
         '500':
           $ref: '#/components/responses/Internal'
         '503':
@@ -373,6 +375,8 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Validation'
         '500':
           $ref: '#/components/responses/Internal'
         '503':
@@ -402,11 +406,11 @@ paths:
                 $ref: '#/components/schemas/History'
               example:
                 entries:
-                - id: 101
+                - id: 102
                   txn_id: 00000000-0000-4000-8000-000000000003
                   wallet_id: 00000000-0000-4000-8000-000000000001
                   type: TRANSFER
-                  direction: CREDIT
+                  direction: DEBIT
                   amount_minor: 100
                   currency: INR
                   created_at: '2026-11-19T00:00:00Z'
@@ -463,25 +467,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/Transaction'
               example:
-                id: 00000000-0000-4000-8000-000000000003
+                id: 00000000-0000-4000-8000-000000000005
                 type: REVERSAL
                 description: null
-                reverses_txn_id: 00000000-0000-4000-8000-000000000001
+                reverses_txn_id: 00000000-0000-4000-8000-000000000003
                 created_at: '2026-11-19T00:00:00Z'
                 entries:
-                - id: 100
-                  txn_id: 00000000-0000-4000-8000-000000000003
+                - id: 104
+                  txn_id: 00000000-0000-4000-8000-000000000005
                   wallet_id: 00000000-0000-4000-8000-000000000002
                   type: REVERSAL
-                  direction: CREDIT
+                  direction: DEBIT
                   amount_minor: 100
                   currency: INR
                   created_at: '2026-11-19T00:00:00Z'
-                - id: 101
-                  txn_id: 00000000-0000-4000-8000-000000000003
+                - id: 105
+                  txn_id: 00000000-0000-4000-8000-000000000005
                   wallet_id: 00000000-0000-4000-8000-000000000001
                   type: REVERSAL
-                  direction: DEBIT
+                  direction: CREDIT
                   amount_minor: 100
                   currency: INR
                   created_at: '2026-11-19T00:00:00Z'
@@ -498,7 +502,7 @@ paths:
         '413':
           $ref: '#/components/responses/TooLarge'
         '422':
-          $ref: '#/components/responses/OperationRejected'
+          $ref: '#/components/responses/ReversalRejected'
         '500':
           $ref: '#/components/responses/Internal'
         '503':
@@ -845,6 +849,10 @@ components:
             - check
             - expected
             - actual
+            anyOf:
+            - required: [currency]
+            - required: [wallet_id]
+            - required: [txn_id]
             properties:
               check:
                 type: string
@@ -1049,9 +1057,9 @@ components:
               code: VALIDATION_ERROR
               message: Request validation failed.
               details: null
-    OperationRejected:
+    DepositRejected:
       description: Validation or business rule rejects the operation.
-      headers:
+      headers: &rejectedHeaders
         X-Request-ID:
           description: Server-generated request UUID.
           schema:
@@ -1059,34 +1067,53 @@ components:
           example: 00000000-0000-4000-8000-000000000003
       content:
         application/json:
-          schema:
+          schema: &rejectedSchema
             $ref: '#/components/schemas/Error'
           examples:
-            validation:
+            validation: &rejectedValidation
               value:
                 error:
                   code: VALIDATION_ERROR
                   message: Request validation failed.
                   details: null
-            insufficient:
-              value:
-                error:
-                  code: INSUFFICIENT_FUNDS
-                  message: Balance is too low.
-                  details: null
-            currency:
-              value:
-                error:
-                  code: CURRENCY_MISMATCH
-                  message: Currencies differ.
-                  details: null
-            conflict:
+            conflict: &rejectedConflict
               value:
                 error:
                   code: IDEMPOTENCY_CONFLICT
                   message: Key conflicts with the original request.
                   details: null
-            notReversible:
+    TransferRejected:
+      description: Validation or business rule rejects the operation.
+      headers: *rejectedHeaders
+      content:
+        application/json:
+          schema: *rejectedSchema
+          examples:
+            validation: *rejectedValidation
+            insufficient: &rejectedInsufficient
+              value:
+                error:
+                  code: INSUFFICIENT_FUNDS
+                  message: Balance is too low.
+                  details: null
+            currency: &rejectedCurrency
+              value:
+                error:
+                  code: CURRENCY_MISMATCH
+                  message: Currencies differ.
+                  details: null
+            conflict: *rejectedConflict
+    ReversalRejected:
+      description: Validation or business rule rejects the operation.
+      headers: *rejectedHeaders
+      content:
+        application/json:
+          schema: *rejectedSchema
+          examples:
+            validation: *rejectedValidation
+            insufficient: *rejectedInsufficient
+            conflict: *rejectedConflict
+            notReversible: &rejectedNotReversible
               value:
                 error:
                   code: NOT_REVERSIBLE

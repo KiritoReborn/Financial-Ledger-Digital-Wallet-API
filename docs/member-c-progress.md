@@ -6,9 +6,9 @@ work sessions and review units, not fabricated calendar-day progress.
 
 | Package | Next deliverable | Dependency / status |
 | --- | --- | --- |
-| C01 | API framework, health, CORS, errors, IDs and body limit | Health PR #9, CORS PR #10 and request-safety PR #11 await review. Shared-provider integration awaits A/H03. |
-| C02 | Full OpenAPI 3.x contract and Prism mock | Issue #14: 11-operation provisional contract, static fixtures and 30 new local checks; full validators and Prism HTTP checks run in CI. Team DTO/cursor agreement pending. |
-| C03 | Transaction/posting/idempotency contracts, Clock/IdProvider and fakes | v0.1 implemented with 15 passing contract cases; issue #12 and PR #13 track review and A/B/D agreement. Not formally frozen. |
+| C01 | API framework, health, CORS, errors, IDs and body limit | Health PR #9 reached main. PR #11 targets main and includes CORS from #10. |
+| C02 | Full OpenAPI 3.x contract and Prism mock | #15 merged into the C03 branch. Its contract and fixtures now reach main through #11. Issue #14 tracks team agreement on DTOs and the history cursor. |
+| C03 | Transaction/posting/idempotency contracts, Clock/IdProvider and fakes | #13 merged into #11's branch. Issue #12 tracks A/B/D agreement on the signatures before the M0 freeze. |
 | C04 | Balanced posting for deposit, transfer and reversal | Consume A's actual migration 001 and transaction provider; never commit inside posting. |
 | C05 | Failure-injection, rollback and crash harness | Depends on C04 and shared transaction integration. |
 | C06 | Owner-checked transfer reads and paginated history | Depends on A's auth/provider, stable schema and posting data. |

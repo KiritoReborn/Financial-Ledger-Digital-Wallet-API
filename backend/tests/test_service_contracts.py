@@ -79,6 +79,25 @@ def test_transaction_context_commits_only_on_success(database):
     assert connection.execute("SELECT value FROM marker").fetchall() == [(1,)]
 
 
+def test_deferred_commit_failure_rolls_back_and_allows_reuse(database):
+    connection = database.connection
+    connection.execute("CREATE TABLE parent (id INTEGER PRIMARY KEY)")
+    connection.execute(
+        "CREATE TABLE child (parent_id INTEGER REFERENCES parent(id) DEFERRABLE INITIALLY DEFERRED)"
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="FOREIGN KEY"), database.transaction():
+        connection.execute("INSERT INTO marker VALUES (1)")
+        connection.execute("INSERT INTO child VALUES (99)")
+        pending_rows = connection.execute("SELECT parent_id FROM child").fetchall()
+
+    assert pending_rows == [(99,)]
+    assert not connection.in_transaction
+    with database.transaction():
+        assert connection.execute("SELECT parent_id FROM child").fetchall() == []
+        connection.execute("INSERT INTO marker VALUES (2)")
+    assert connection.execute("SELECT value FROM marker").fetchall() == [(2,)]
+
+
 def test_caller_context_rolls_back_posting_and_idempotency_fakes(database):
     posting = f.FakePostTransaction(posted())
     wrapper = f.FakeRunIdempotent()

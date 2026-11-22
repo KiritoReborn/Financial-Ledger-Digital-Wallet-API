@@ -6,10 +6,11 @@ It documents their routes without implementing their services.
 
 ## Run the mock
 
-From the repository root, with Node.js 22 and npm:
+Use Node.js 24.19.0 to match CI. The locked Prism dependencies require Node.js
+24.18.0 or newer. Run these commands from the repository root.
 
 ```sh
-npm --prefix tools/api-mock install --ignore-scripts --no-audit --no-fund
+npm --prefix tools/api-mock ci --ignore-scripts --no-audit --no-fund
 npm --prefix tools/api-mock start
 ```
 
@@ -50,8 +51,5 @@ Tests check path/method coverage, the OpenAPI document, schemas and examples,
 money boundaries, unknown fields, UUID/currency validation and history limits.
 The real health route is compared with FastAPI's generated schema. Full
 implementation drift enforcement remains B08-owned after routes exist.
-CI also starts the pinned Prism CLI and runs the HTTP smoke check.
-
-The package pins the Prism CLI version. Transitive dependency locking is pending
-a successful registry resolution; the local registry connection failed during
-this increment. CI must pass before this PR is ready for review.
+CI installs Prism and its dependencies from `tools/api-mock/package-lock.json`,
+starts the mock, and runs the HTTP smoke check.
