@@ -22,6 +22,7 @@ that the requested entries invert them exactly, and inserts a new transaction
 referencing the original. Migration 001 enforces the single reversal link and
 migration 002 protects the historical rows.
 
-The team still needs to verify the H03 provider and review the C03 interface.
+The real H03 provider passed the posting and rollback smoke test. The team
+still needs to review the C03 interface and the pending production wiring.
 [Posting issue #16](https://github.com/harshith-raj-06/Financial-Ledger-Digital-Wallet-API/issues/16)
 and [service contract PR #13](https://github.com/harshith-raj-06/Financial-Ledger-Digital-Wallet-API/pull/13).

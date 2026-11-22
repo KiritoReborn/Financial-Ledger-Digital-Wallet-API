@@ -4,20 +4,23 @@ import json
 import time
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+from uuid import UUID
 
 BASE = "http://127.0.0.1:4010"
 WALLET = "00000000-0000-4000-8000-000000000001"
 OTHER = "00000000-0000-4000-8000-000000000002"
-TRANSACTION = "00000000-0000-4000-8000-000000000003"
 
 
-def request(method, path, body=None, expected=200, prefer=None):
-    headers = {
-        "Authorization": "Bearer example-only-not-a-real-token",
-        "X-Admin-Key": "example-only-not-a-real-admin-key",
-        "Idempotency-Key": "mock-fixture-only",
-        "Content-Type": "application/json",
-    }
+def request(method, path, body=None, expected=200, prefer=None, *, admin=False, key=None):
+    headers = {}
+    if path not in {"/health", "/users"}:
+        headers["Authorization"] = "Bearer example-only-not-a-real-token"
+    if admin:
+        headers["X-Admin-Key"] = "example-only-not-a-real-admin-key"
+    if key:
+        headers["Idempotency-Key"] = key
+    if body is not None:
+        headers["Content-Type"] = "application/json"
     if prefer:
         headers["Prefer"] = prefer
     data = None if body is None else json.dumps(body).encode()
@@ -29,9 +32,9 @@ def request(method, path, body=None, expected=200, prefer=None):
     with response:
         assert response.status == expected, (method, path, response.status, expected)
         payload = json.load(response)
-        assert response.headers.get("X-Request-ID"), (method, path, "missing request ID")
-        if method == "POST" and any(part in path for part in ("deposit", "transfer", "reverse")) and expected == 201:
-            assert response.headers.get("Idempotent-Replayed") in {"true", "false"}
+        assert UUID(response.headers["X-Request-ID"]).version == 4
+        if key and expected == 201:
+            assert response.headers.get("Idempotent-Replayed") == "false"
     print(f"{method} {path}: {expected}")
     return payload
 
@@ -51,16 +54,25 @@ def main():
     request("POST", "/wallets", {"currency": "INR"}, 201)
     request("GET", "/wallets")
     request("GET", f"/wallets/{WALLET}")
-    request("POST", f"/wallets/{WALLET}/deposit", {"amount_minor": 100}, 201)
+    deposit = request("POST", f"/wallets/{WALLET}/deposit", {"amount_minor": 100}, 201, key="deposit-1")
     transfer = {"from_wallet_id": WALLET, "to_wallet_id": OTHER,
                 "amount_minor": 100, "currency": "INR"}
-    request("POST", "/transfers", transfer, 201)
-    request("GET", f"/transfers/{TRANSACTION}")
-    request("GET", f"/wallets/{WALLET}/transactions?limit=20")
-    request("POST", f"/transactions/{TRANSACTION}/reverse", {}, 201)
-    request("GET", "/admin/reconcile")
-    error = request("POST", "/transfers", transfer, 422, "code=422")
-    assert error["error"]["code"]
+    posted = request("POST", "/transfers", transfer, 201, key="transfer-1")
+    assert posted["id"] != deposit["id"]
+    assert request("GET", f"/transfers/{posted['id']}") == posted
+    history = request("GET", f"/wallets/{WALLET}/transactions?limit=20")
+    assert all(entry["wallet_id"] == WALLET for entry in history["entries"])
+    assert any(entry["txn_id"] == posted["id"] and entry["direction"] == "DEBIT"
+               for entry in history["entries"])
+    reversal = request("POST", f"/transactions/{posted['id']}/reverse", {}, 201, admin=True, key="reverse-1")
+    assert reversal["reverses_txn_id"] == posted["id"] and reversal["id"] != posted["id"]
+    assert {(e["wallet_id"], e["direction"], e["amount_minor"]) for e in reversal["entries"]} == {
+        (WALLET, "CREDIT", 100), (OTHER, "DEBIT", 100)
+    }
+    report = request("GET", "/admin/reconcile", admin=True)
+    assert report["ok"] and all(report["checks"].values()) and report["mismatches"] == []
+    error = request("POST", "/transfers", transfer, 422, "code=422, example=conflict", key="transfer-1")
+    assert error["error"]["code"] == "IDEMPOTENCY_CONFLICT"
     print("Prism: all 11 operations and a declared error fixture passed.")
 
 
