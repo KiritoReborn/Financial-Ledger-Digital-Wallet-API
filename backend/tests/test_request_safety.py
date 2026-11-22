@@ -143,7 +143,7 @@ def test_multiple_under_limit_chunks_are_replayed_in_order(client):
 @pytest.mark.parametrize("body", [
     {"amount_minor": 0}, {"amount_minor": -1}, {"amount_minor": True},
     {"amount_minor": 1.5}, {"amount_minor": "1"}, {"amount_minor": 10**12 + 1},
-    {"amount_minor": 1, "unexpected": SECRET}, {},
+    {"amount_minor": 1, "unexpected": SECRET}, {"amount_minor": 1, SECRET: 1}, {},
 ])
 def test_validation_envelope_omits_input_values(client, body):
     response = client.post("/_validation", json=body)
