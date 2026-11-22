@@ -7,3 +7,8 @@ FR-5.2,D03,implemented-pending-review,pending,pending,backend/tests/test_reconci
 FR-5.3,D03,implemented-pending-review,pending,pending,backend/tests/test_api_admin.py,not-applicable,brain/projects/2026-11-20-d03-reconciliation.md
 FR-5.4,D03,implemented-pending-review,pending,pending,backend/tests/test_reconciliation.py,not-applicable,brain/projects/2026-11-20-d03-reconciliation.md
 NFR-SEC-2,D03,admin-key-check-implemented-pending-review,pending,pending,backend/tests/test_api_admin.py,not-applicable,brain/projects/2026-11-20-d03-reconciliation.md
+FR-4.2,D02,implemented-pending-review,pending,pending,backend/tests/test_reversal.py,not-applicable,brain/projects/2026-11-22-d02-d04-reversal-security.md
+FR-4.3,D02,implemented-pending-review,pending,pending,backend/tests/test_reversal.py,not-applicable,brain/projects/2026-11-22-d02-d04-reversal-security.md
+FR-4.4,D02,implemented-pending-review,pending,pending,backend/tests/test_reversal.py,not-applicable,brain/projects/2026-11-22-d02-d04-reversal-security.md
+FR-4.5,D02,implemented-pending-review,pending,pending,backend/tests/test_reversal.py,not-applicable,brain/projects/2026-11-22-d02-d04-reversal-security.md
+NFR-SEC-7,D04,admin-security-suite-pending-review,pending,pending,tests/test_admin_security.py,not-applicable,brain/projects/2026-11-22-d02-d04-reversal-security.md
