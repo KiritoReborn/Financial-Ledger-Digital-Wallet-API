@@ -54,11 +54,10 @@ class MemoryTransactions:
             self.connection.execute("BEGIN IMMEDIATE" if write else "BEGIN")
             try:
                 yield self.connection
+                self.connection.commit()
             except BaseException:
                 self.connection.rollback()
                 raise
-            else:
-                self.connection.commit()
         finally:
             if not write and not previous_query_only:
                 self.connection.execute("PRAGMA query_only=OFF")
