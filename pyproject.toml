@@ -20,8 +20,11 @@ dev = [
   "ruff>=0.8,<1",
 ]
 
+[tool.setuptools]
+include-package-data = false
+
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["backend", "."]
 include = ["app", "app.*", "db"]
 
 [tool.setuptools.package-data]

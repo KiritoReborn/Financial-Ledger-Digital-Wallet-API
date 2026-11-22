@@ -21,6 +21,14 @@ Start the API with `DATABASE_PATH` pointing into a new directory. Startup create
 
 Open `request.app.state.database.transaction()` once. Pass that connection to posting and idempotency so a failure rolls back both. `BEGIN IMMEDIATE` takes the write lock on entry. SQLite waits up to five seconds for another writer. For history and health, use `transaction(write=False)` to keep a read-only snapshot.
 
+## Windows package verification
+
+Git can check out the former `backend/db` symlink as a text file on Windows.
+That build succeeded while leaving the migration runner and both SQL files
+out of the wheel. Building from the repository root includes the existing
+`db/` directory directly. CI installs the wheel in a fresh environment outside
+the checkout and initializes a database from the packaged migrations.
+
 - [x] Check foreign keys, FULL synchronization, WAL and the 5000 ms timeout on fresh connections.
 - [x] Restart the API against the same file and check the stored data.
 - [ ] Run a real posting call with Raghu when C04 is ready.
