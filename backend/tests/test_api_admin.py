@@ -105,7 +105,8 @@ def test_unconfigured_secrets_fail_closed(admin_env, monkeypatch, missing):
     assert response.status_code == 401
 
 
-def test_auth_failure_never_opens_the_database():
+def test_auth_failure_never_opens_the_database(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "ledger.db"))
     opened = []
 
     @contextmanager
@@ -155,7 +156,9 @@ def busy_error():
     (sqlite3.DatabaseError("file /secret/path is not a database"), 500,
      {"error": {"code": "INTERNAL_ERROR", "message": "An internal error occurred."}}),
 ])
-def test_database_errors_are_sanitized(error, status, body):
+def test_database_errors_are_sanitized(error, status, body, tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "ledger.db"))
+
     @contextmanager
     def snapshot():
         raise error
@@ -169,12 +172,14 @@ def test_database_errors_are_sanitized(error, status, body):
     assert "secret" not in response.text
 
 
-def test_missing_database_returns_500_without_creating_it(tmp_path, monkeypatch):
+def test_database_removed_after_startup_returns_500_without_recreating_it(tmp_path, monkeypatch):
     missing = tmp_path / "missing.sqlite3"
     monkeypatch.setenv("DATABASE_PATH", str(missing))
 
     app = create_app(admin_credentials=AdminCredentials(TOKEN, KEY))
-    response = get(app, ADMIN_HEADERS)
+    with TestClient(app) as client:
+        missing.unlink()
+        response = client.get("/admin/reconcile", headers=ADMIN_HEADERS)
 
     assert response.status_code == 500
     assert str(tmp_path) not in response.text
