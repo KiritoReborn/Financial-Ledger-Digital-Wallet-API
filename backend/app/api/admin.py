@@ -5,7 +5,6 @@ header (NFR-SEC-2, BR-5). Both are compared in constant time and every failure
 returns the same 401 UNAUTHENTICATED envelope before the database is opened.
 """
 
-import hashlib
 import hmac
 import os
 import sqlite3
@@ -18,6 +17,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
+from ..auth import bearer_token, token_digest
 from ..services.reconciliation import reconcile, sqlite_read_snapshot
 
 router = APIRouter()
@@ -40,22 +40,12 @@ class AdminCredentials:
         return "AdminCredentials(<redacted>)"
 
 
-def _digest(value: str) -> bytes:
-    # Hashing first gives equal-length inputs, so compare_digest leaks no length.
-    return hashlib.sha256(value.encode("utf-8")).digest()
-
-
-def _bearer_token(authorization: str | None) -> str:
-    scheme, _, token = (authorization or "").partition(" ")
-    return token.strip() if scheme.lower() == "bearer" else ""
-
-
 def is_admin(credentials: AdminCredentials, authorization: str | None,
              admin_key: str | None) -> bool:
     """Check token and key without short-circuiting; fail closed if unconfigured."""
-    token_ok = hmac.compare_digest(_digest(_bearer_token(authorization)),
-                                   _digest(credentials.token))
-    key_ok = hmac.compare_digest(_digest(admin_key or ""), _digest(credentials.key))
+    token_ok = hmac.compare_digest(token_digest(bearer_token(authorization)),
+                                   token_digest(credentials.token))
+    key_ok = hmac.compare_digest(token_digest(admin_key or ""), token_digest(credentials.key))
     configured = bool(credentials.token) and bool(credentials.key)
     return configured & token_ok & key_ok
 
