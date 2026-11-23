@@ -31,5 +31,10 @@ Review #11 for the API foundation and #23 with its base #21 for H03. Review
 on H03 acceptance. The team can record its signature and history cursor
 decisions on #12 and #14.
 
+On 2026-11-23, #22 reached main. The API foundation branch incorporated that
+merge and retained both reconciliation and the request middleware. All 227
+tests passed, including a check that reconciliation emits a request ID and
+honors the configured frontend origin.
+
 Earlier decisions and evidence are in [[2026-11-19-c01-request-safety]],
 [[2026-11-19-c02-api-contract]], and [[2026-11-19-c03-contracts]].
