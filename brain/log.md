@@ -19,5 +19,6 @@ source: "User-directed incremental C01 work"
 | 2026-11-20 | A | Completed the H01 repository setup, corrected the clean-clone commands, and documented review and ownership rules. | [Contributor guide](../AGENTS.md), [setup](../README.md) |
 | 2026-11-20 | A | Moved migration setup into startup. Tested a second boot against the same file and checked that the user row survived. | [[projects/h03-sqlite-provider]] |
 | 2026-11-23 | A | Integrated reconciliation with the startup factory. Verified a real C04 deposit and rollback, plus 113 passing tests. | [[projects/h03-sqlite-provider]] |
+| 2026-11-23 | A | Updated the routine PR workflow to allow author review and merge after both required checks pass. | [Contributor guide](../AGENTS.md) |
 
 This log tracks development work.

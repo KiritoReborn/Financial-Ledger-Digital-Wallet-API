@@ -8,4 +8,4 @@ Start a feature branch from current main for each work-package issue. Link the i
 
 Record the work in the brain log and review the diff before requesting review.
 
-During early handover A and C cross-review. Merge after CI passes and at least one teammate approves. Migration, posting, idempotency and reversal changes require two approvals. After formal M0, changes to the frozen transaction, posting or idempotency signatures require approval from the other three members.
+Review every PR. For routine changes, the author may review the diff, record the review and test results in the PR, and merge once the required CI checks pass. A and C can request cross-review during early handover. Migration, posting, idempotency and reversal changes require two approvals. After formal M0, changes to the frozen transaction, posting or idempotency signatures require approval from the other three members.
