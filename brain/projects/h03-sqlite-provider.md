@@ -23,6 +23,6 @@ Open `request.app.state.database.transaction()` once. Pass that connection to po
 
 - [x] Check foreign keys, FULL synchronization, WAL and the 5000 ms timeout on fresh connections.
 - [x] Restart the API against the same file and check the stored data.
-- [ ] Run a real posting call with Raghu when C04 is ready.
+- [x] Tested C04 (`ba5f03a`) on the provider. A 75-minor-unit deposit produced two entries. A second deposit followed by a caller exception rolled back both balances and entries.
 
 [Provider](../../backend/app/database.py) · [Lock and rollback tests](../../backend/tests/test_database.py) · [Restart test](../../backend/tests/test_api_health.py)

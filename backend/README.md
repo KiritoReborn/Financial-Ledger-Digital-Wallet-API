@@ -1,6 +1,6 @@
 # Backend setup and database transactions
 
-The API currently exposes `GET /health`. SQLite initialization runs during application startup.
+The API exposes `GET /health` and `GET /admin/reconcile`. SQLite initialization runs during application startup.
 
 ## Install and run
 
