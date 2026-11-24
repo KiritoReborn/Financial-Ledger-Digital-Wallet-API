@@ -39,7 +39,7 @@ development dependencies:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e "./backend[dev]"
+python -m pip install -e ".[dev]"
 ```
 
 - **Pass condition:** Exit code `0`; `pytest`, `ruff`, `fastapi`, and `uvicorn`
@@ -54,7 +54,7 @@ so no build artifacts remain in the working tree:
 python -m ruff check .
 python -m ruff check backend
 TMP_DIST="$(mktemp -d)"
-python -m build backend --outdir "$TMP_DIST"
+python -m build --outdir "$TMP_DIST"
 rm -rf "$TMP_DIST"
 ```
 
@@ -127,7 +127,7 @@ credentials:
 
 | Step | Check | Result | Notes |
 | --- | --- | --- | --- |
-| 1 | Install dependencies (`pip install -e "./backend[dev]"`) | PASS / FAIL | e.g. Python 3.11, venv active |
+| 1 | Install dependencies (`pip install -e ".[dev]"`) | PASS / FAIL | e.g. Python 3.11, venv active |
 | 2 | Lint & build (`ruff check`, `python -m build`) | PASS / FAIL | e.g. 0 lint issues, wheel built |
 | 3 | Test suite (`pytest backend/tests tests`) | PASS / FAIL | e.g. 108 passed |
 | 4 | Start FastAPI server (`db.migrate` + `uvicorn`) | PASS / FAIL | e.g. listening on `127.0.0.1:8000` |
