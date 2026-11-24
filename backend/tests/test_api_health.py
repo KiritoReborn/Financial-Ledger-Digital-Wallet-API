@@ -5,6 +5,8 @@ from contextlib import closing
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures("api_environment")
+
 TestClient = pytest.importorskip(
     "fastapi.testclient", reason="API checks require backend[dev]."
 ).TestClient
@@ -44,7 +46,7 @@ def test_startup_migrates_a_new_database_and_restart_preserves_versions(tmp_path
                         "VALUES ('u1', 'Test', 'test@example.org', 'test-hash', '2026-11-20')"
                     )
             with app.state.database.transaction(write=False) as conn:
-                assert conn.execute("SELECT id FROM users").fetchall() == [("u1",)]
+                assert conn.execute("SELECT id FROM users WHERE id = 'u1'").fetchall() == [("u1",)]
                 assert conn.execute(
                     "SELECT version FROM schema_migrations ORDER BY version"
                 ).fetchall() == [(1,), (2,)]
@@ -96,8 +98,8 @@ def test_sqlite_busy_uses_the_documented_error(tmp_path, monkeypatch):
     }
 
 
-def test_product_schema_exposes_health_and_admin_reconcile_only():
+def test_product_schema_exposes_registration_health_and_reconciliation():
     paths = create_app().openapi()["paths"]
-    assert set(paths) == {"/health", "/admin/reconcile"}
+    assert set(paths) == {"/health", "/users", "/admin/reconcile"}
     assert "get" in paths["/health"]
     assert not paths["/health"]["get"].get("security")

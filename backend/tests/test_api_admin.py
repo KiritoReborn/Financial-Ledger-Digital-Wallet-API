@@ -56,9 +56,9 @@ def test_clean_ledger_returns_ok_report(admin_env):
 
 def test_mismatches_still_return_200_with_ok_false(admin_env):
     admin_env.execute("UPDATE wallets SET balance_minor = 42 WHERE id = 'alice-usd'")
-    before = admin_env.path.read_bytes()
-
-    response = get(create_app(), ADMIN_HEADERS)
+    with TestClient(create_app()) as client:
+        before = admin_env.path.read_bytes()
+        response = client.get("/admin/reconcile", headers=ADMIN_HEADERS)
 
     assert response.status_code == 200
     body = response.json()
@@ -101,12 +101,8 @@ def test_bearer_scheme_is_case_insensitive(admin_env):
 @pytest.mark.parametrize("missing", ["ADMIN_TOKEN", "ADMIN_KEY"])
 def test_unconfigured_secrets_fail_closed(admin_env, monkeypatch, missing):
     monkeypatch.setenv(missing, "")
-    headers = {"Authorization": "Bearer " + ("" if missing == "ADMIN_TOKEN" else TOKEN),
-               "X-Admin-Key": "" if missing == "ADMIN_KEY" else KEY}
-
-    response = get(create_app(), headers)
-
-    assert response.status_code == 401
+    with pytest.raises(ValueError, match=missing), TestClient(create_app()):
+        pytest.fail("Startup accepted empty admin credentials")
 
 
 def test_auth_failure_never_opens_the_database(tmp_path, monkeypatch):

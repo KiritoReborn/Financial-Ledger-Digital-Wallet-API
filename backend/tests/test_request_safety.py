@@ -9,6 +9,8 @@ from uuid import UUID
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures("api_environment")
+
 fastapi = pytest.importorskip("fastapi", reason="Install backend[dev].")
 TestClient = pytest.importorskip("fastapi.testclient").TestClient
 pydantic = pytest.importorskip("pydantic")

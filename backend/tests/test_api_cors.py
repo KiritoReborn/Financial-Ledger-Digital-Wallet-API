@@ -2,6 +2,8 @@
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures("api_environment")
+
 TestClient = pytest.importorskip(
     "fastapi.testclient", reason="API checks require backend[dev]."
 ).TestClient

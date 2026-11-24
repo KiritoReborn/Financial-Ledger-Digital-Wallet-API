@@ -31,3 +31,11 @@ source: "User-directed incremental C01 work"
 | 2026-11-24 | C | Prepared C05 for review with rollback and process-recovery tests against the migrated SQLite database. All 291 tests and Ruff passed. | [[projects/2026-11-24-c05-recovery]] |
 
 This log records development and verification sessions.
+
+### 2026-11-23 · FR-1.2 bearer tokens
+
+Registration can issue a random token and store its SHA-256 digest in the column from [[projects/h02-database-migration]]. The lookup test uses two users and checks that presenting a stored digest fails. The admin route shares the header parser and keeps its separate key check.
+
+The registration endpoint and admin bootstrap passed the HTTP and restart tests. Concurrent registrations produced a single user, and rotating the admin token preserved the admin ID. See [[projects/fr-1-user-registration]].
+
+2026-11-24 · Integrated registration with the shared HTTP handlers on main. Ruff and all 305 tests passed with the combined API and posting suites.
