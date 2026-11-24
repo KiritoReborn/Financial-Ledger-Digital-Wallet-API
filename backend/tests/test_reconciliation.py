@@ -36,6 +36,20 @@ def test_empty_ledger_passes(empty_ledger):
     assert run(empty_ledger) == {"ok": True, "checks": ALL_PASS, "mismatches": []}
 
 
+def test_cumulative_totals_can_exceed_sqlite_integer_range(empty_ledger):
+    ledger = empty_ledger
+    ledger.wallet("system", "INR")
+    ledger.user("alice")
+    ledger.wallet("alice-inr", "INR", "alice")
+    amount = 2**63 - 1
+    # Seed large entries directly to exercise a lifetime total with only a few rows.
+    for _ in range(3):
+        original = ledger.post("DEPOSIT", "system", "alice-inr", amount, "INR")
+        ledger.post("REVERSAL", "alice-inr", "system", amount, "INR", reverses=original)
+
+    assert run(ledger) == {"ok": True, "checks": ALL_PASS, "mismatches": []}
+
+
 def test_seeded_balance_corruption_is_reported_per_wallet(ledger):
     # wallets is not append-only, so a direct UPDATE is the realistic corruption.
     ledger.execute("UPDATE wallets SET balance_minor = balance_minor + 1 WHERE id = 'bob-inr'")

@@ -1,0 +1,13 @@
+{
+  "name": "ledger-api-mock",
+  "private": true,
+  "version": "0.1.0",
+  "description": "C02 local static API fixtures; no financial implementation",
+  "scripts": {
+    "start": "prism mock ../../docs/api/openapi.yaml --host 127.0.0.1 --port 4010"
+  },
+  "devDependencies": {
+    "@stoplight/prism-cli": "5.15.11"
+  },
+  "engines": { "node": ">=24.18.0" }
+}

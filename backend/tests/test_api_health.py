@@ -5,18 +5,14 @@ from contextlib import closing
 
 import pytest
 
+pytestmark = pytest.mark.usefixtures("api_environment")
+
 TestClient = pytest.importorskip(
     "fastapi.testclient", reason="API checks require backend[dev]."
 ).TestClient
 create_app = pytest.importorskip(
     "app.main", reason="Install the backend or set PYTHONPATH=backend."
 ).create_app
-
-
-@pytest.fixture(autouse=True)
-def admin_secrets(monkeypatch):
-    monkeypatch.setenv("ADMIN_TOKEN", "health-test-token")
-    monkeypatch.setenv("ADMIN_KEY", "health-test-key")
 
 
 def test_health_needs_no_authentication_and_returns_json(tmp_path, monkeypatch):

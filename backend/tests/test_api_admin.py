@@ -2,6 +2,7 @@
 
 import sqlite3
 from contextlib import contextmanager
+from uuid import UUID
 
 import pytest
 
@@ -35,9 +36,12 @@ def get(app, headers=None):
 
 
 def test_clean_ledger_returns_ok_report(admin_env):
-    response = get(create_app(), ADMIN_HEADERS)
+    origin = "http://localhost:5173"
+    response = get(create_app(frontend_origin=origin), {**ADMIN_HEADERS, "Origin": origin})
 
     assert response.status_code == 200
+    assert UUID(response.headers["x-request-id"]).version == 4
+    assert response.headers["access-control-allow-origin"] == origin
     assert response.json() == {
         "ok": True,
         "checks": {

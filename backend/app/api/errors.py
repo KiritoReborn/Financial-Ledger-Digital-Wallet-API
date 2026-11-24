@@ -2,12 +2,7 @@ import sqlite3
 
 from fastapi.responses import JSONResponse
 
-
-def error_response(status: int, code: str, message: str, headers=None) -> JSONResponse:
-    error: dict[str, object] = {"code": code, "message": message}
-    if status != 500:
-        error["details"] = None
-    return JSONResponse(status_code=status, content={"error": error}, headers=headers)
+from ..http import error_response
 
 
 def database_error(error: Exception) -> JSONResponse:

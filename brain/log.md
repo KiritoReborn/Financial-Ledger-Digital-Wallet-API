@@ -20,11 +20,22 @@ source: "User-directed incremental C01 work"
 | 2026-11-20 | A | Moved migration setup into startup. Tested a second boot against the same file and checked that the user row survived. | [[projects/h03-sqlite-provider]] |
 | 2026-11-23 | A | Integrated reconciliation with the startup factory. Verified a real C04 deposit and rollback, plus 113 passing tests. | [[projects/h03-sqlite-provider]] |
 | 2026-11-23 | A | Updated the routine PR workflow to allow author review and merge after both required checks pass. | [Contributor guide](../AGENTS.md) |
+| 2026-11-19 | C | Added configured frontend-origin policy and 28 CORS cases on raghu/api-cors; opened PR #10 over health PR #9. All 44 local tests and both GitHub CI workflows passed. Human review pending. | [[2026-11-19-c01-cors]] |
+| 2026-11-19 | C | Added shared API error handling, generated request IDs, safe structured request logs and the C01 body limit. All 80 local tests passed; publication and CI recorded in the linked note. | [[2026-11-19-c01-request-safety]] |
+| 2026-11-19 | C | Added C03 provisional provider/service protocols and deterministic fakes under issue #12. All 95 local tests passed; transaction ownership and replay/failure cases covered. | [[2026-11-19-c03-contracts]] |
+| 2026-11-19 | C | Added the C02 OpenAPI proposal and static Prism fixtures under issue #14; 125 local tests passed, two full-validator cases await CI. | [[2026-11-19-c02-api-contract]] |
+| 2026-11-24 | C | Recorded merged C01–C04 evidence, linked the C05 recovery PR, and scored Member C progress from the revised 36-point work plan. | [Traceability matrix](../docs/traceability.csv), [Member C progress](../docs/member-c-progress.md) |
+| 2026-11-20 | C | Tested posting against the merged migrations. All 241 Python tests passed. A separate 50-writer run produced 33 transfers and 17 insufficient-funds rejections. | [[projects/2026-11-20-c04-posting]] |
+| 2026-11-22 | C | Reconciled C01–C03 branch history, corrected validation and mock setup, and reviewed the new provider and reconciliation PRs. | [[projects/2026-11-22-github-review]] |
+| 2026-11-24 | C | Synchronized PR #11 with the merged SQLite provider. Startup migrations, health, and reconciliation work alongside the existing CORS and request safeguards. The combined branch passed 235 tests and Ruff. | [[projects/h03-sqlite-provider]] |
+| 2026-11-24 | C | Prepared C05 for review with rollback and process-recovery tests against the migrated SQLite database. All 291 tests and Ruff passed. | [[projects/2026-11-24-c05-recovery]] |
 
-This log tracks development work.
+This log records development and verification sessions.
 
 ### 2026-11-23 · FR-1.2 bearer tokens
 
 Registration can issue a random token and store its SHA-256 digest in the column from [[projects/h02-database-migration]]. The lookup test uses two users and checks that presenting a stored digest fails. The admin route shares the header parser and keeps its separate key check.
 
 The registration endpoint and admin bootstrap passed the HTTP and restart tests. Concurrent registrations produced a single user, and rotating the admin token preserved the admin ID. See [[projects/fr-1-user-registration]].
+
+2026-11-24 · Integrated registration with the shared HTTP handlers on main. Ruff and all 305 tests passed with the combined API and posting suites.
