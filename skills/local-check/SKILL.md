@@ -74,6 +74,7 @@ python -m pytest -q backend/tests tests
 
 ### Step 4 — Prepare Isolated Database & Start FastAPI Server (`DI-1`, `EI-CM-1`)
 
+Set nonempty `ADMIN_TOKEN` and `ADMIN_KEY` in the process environment before startup.
 Apply migrations to a disposable temporary SQLite file and launch the FastAPI
 application on localhost (default port `8000`, configurable via `PORT`):
 

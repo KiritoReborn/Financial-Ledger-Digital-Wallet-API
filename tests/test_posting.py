@@ -101,6 +101,7 @@ def test_posted_entries_are_immutable(ledger):
         ("repeated", 409, "ALREADY_REVERSED"),
     ],
 )
+@pytest.mark.usefixtures("api_environment")
 def test_api_boundary_translates_posting_errors_after_rollback(ledger, scenario, status, code):
     from app.main import create_app
     from fastapi.testclient import TestClient
@@ -447,6 +448,7 @@ def test_description_is_bound_as_data_and_idempotency_is_left_to_b(ledger):
     assert connection.execute("SELECT COUNT(*) FROM wallets").fetchone()[0] == 4
     assert connection.execute("SELECT COUNT(*) FROM idempotency_keys").fetchone()[0] == 0
 
+@pytest.mark.usefixtures("api_environment")
 def test_http_failure_rolls_back_posting_and_replay_record(ledger, monkeypatch):
     from app.main import create_app
     from fastapi.testclient import TestClient
