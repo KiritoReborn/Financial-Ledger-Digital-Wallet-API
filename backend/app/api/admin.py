@@ -18,8 +18,9 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
 from ..auth import ADMIN_ID, authenticated_user_id, bearer_token, token_digest
+from ..http import error_response
 from ..services.reconciliation import reconcile, sqlite_read_snapshot
-from .errors import database_error, error_response
+from .errors import database_error
 
 router = APIRouter()
 

@@ -11,7 +11,8 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ..auth import issue_user_token
-from .errors import database_error, error_response
+from ..http import error_response
+from .errors import database_error
 
 router = APIRouter()
 
