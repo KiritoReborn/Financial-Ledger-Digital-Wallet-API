@@ -6,9 +6,11 @@ caller's transaction; ``sqlite_read_snapshot`` is the only owner of BEGIN/ROLLBA
 """
 
 import sqlite3
+from collections import defaultdict
 from collections.abc import Iterator
 from contextlib import closing, contextmanager
 from dataclasses import dataclass, field
+from itertools import groupby
 from pathlib import Path
 
 CURRENCIES_BALANCED = "currencies_balanced"
@@ -64,26 +66,25 @@ class ReconciliationReport:
 
 def _currencies_balanced(conn: sqlite3.Connection) -> list[Mismatch]:
     """(a) Per currency, including system wallets, total debits equal total credits."""
-    rows = conn.execute(
-        """
-        SELECT currency,
-               SUM(CASE WHEN direction = 'DEBIT' THEN amount_minor ELSE 0 END) AS debits,
-               SUM(CASE WHEN direction = 'CREDIT' THEN amount_minor ELSE 0 END) AS credits
-        FROM ledger_entries
-        GROUP BY currency
-        HAVING debits <> credits
-        ORDER BY currency
-        """
-    ).fetchall()
-    return [
-        Mismatch(
-            check=CURRENCIES_BALANCED,
-            currency=currency,
-            expected={"debits_minor": debits, "credits_minor": debits},
-            actual={"debits_minor": debits, "credits_minor": credits},
-        )
-        for currency, debits, credits in rows
-    ]
+    # Lifetime totals can exceed SQLite's signed 64-bit range.
+    totals = defaultdict(lambda: {"DEBIT": 0, "CREDIT": 0})
+    for currency, direction, amount in conn.execute(
+        "SELECT currency, direction, amount_minor FROM ledger_entries"
+    ):
+        if direction in {"DEBIT", "CREDIT"}:
+            totals[currency][direction] += amount
+
+    mismatches = []
+    for currency, amounts in sorted(totals.items()):
+        debits, credits = amounts["DEBIT"], amounts["CREDIT"]
+        if debits != credits:
+            mismatches.append(Mismatch(
+                check=CURRENCIES_BALANCED,
+                currency=currency,
+                expected={"debits_minor": debits, "credits_minor": debits},
+                actual={"debits_minor": debits, "credits_minor": credits},
+            ))
+    return mismatches
 
 
 def _transactions_valid(conn: sqlite3.Connection) -> list[Mismatch]:
@@ -99,9 +100,9 @@ def _transactions_valid(conn: sqlite3.Connection) -> list[Mismatch]:
                COALESCE(SUM(e.direction = 'DEBIT'), 0) AS debits,
                COALESCE(SUM(e.direction = 'CREDIT'), 0) AS credits,
                COUNT(DISTINCT e.currency) AS currencies,
-               COALESCE(SUM(CASE WHEN e.direction = 'DEBIT' THEN e.amount_minor END), 0)
+               COALESCE(MAX(CASE WHEN e.direction = 'DEBIT' THEN e.amount_minor END), 0)
                    AS debit_minor,
-               COALESCE(SUM(CASE WHEN e.direction = 'CREDIT' THEN e.amount_minor END), 0)
+               COALESCE(MAX(CASE WHEN e.direction = 'CREDIT' THEN e.amount_minor END), 0)
                    AS credit_minor
         FROM transactions AS t
         LEFT JOIN ledger_entries AS e ON e.txn_id = t.id
@@ -129,26 +130,25 @@ def _wallet_balances_match(conn: sqlite3.Connection) -> list[Mismatch]:
     rows = conn.execute(
         """
         SELECT w.id, w.currency, w.balance_minor,
-               COALESCE(SUM(CASE WHEN e.direction = 'CREDIT' THEN e.amount_minor
-                                 WHEN e.direction = 'DEBIT' THEN -e.amount_minor END), 0)
-                   AS ledger_minor
+               CASE WHEN e.direction = 'CREDIT' THEN e.amount_minor
+                    WHEN e.direction = 'DEBIT' THEN -e.amount_minor ELSE 0 END
         FROM wallets AS w
         LEFT JOIN ledger_entries AS e ON e.wallet_id = w.id
-        GROUP BY w.id
-        HAVING ledger_minor <> w.balance_minor
         ORDER BY w.id
         """
-    ).fetchall()
-    return [
-        Mismatch(
-            check=WALLET_BALANCES_MATCH,
-            wallet_id=wallet_id,
-            currency=currency,
-            expected=ledger_minor,
-            actual=balance_minor,
-        )
-        for wallet_id, currency, balance_minor, ledger_minor in rows
-    ]
+    )
+    mismatches = []
+    for (wallet_id, currency, balance_minor), entries in groupby(rows, key=lambda row: row[:3]):
+        ledger_minor = sum(entry[3] for entry in entries)
+        if ledger_minor != balance_minor:
+            mismatches.append(Mismatch(
+                check=WALLET_BALANCES_MATCH,
+                wallet_id=wallet_id,
+                currency=currency,
+                expected=ledger_minor,
+                actual=balance_minor,
+            ))
+    return mismatches
 
 
 def _entry_currencies_match(conn: sqlite3.Connection) -> list[Mismatch]:
