@@ -1,6 +1,6 @@
 ---
 title: "Second brain run log"
-author: "P. Jaya Raghunandhan Reddy (C), AI-assisted"
+author: "P. Jaya Raghunandhan Reddy (C)"
 date: "2026-11-19"
 category: "projects"
 tags: ["log", "progress"]
@@ -8,22 +8,23 @@ requirements: ["SB-1", "SB-5", "AI-3"]
 source: "User-directed incremental C01 work"
 ---
 
-# Second brain run log
+# Second brain run log (AI-assisted)
 
 | Date | Owner | Actual work | Evidence |
 | --- | --- | --- | --- |
 | 2026-11-19 | C | Verified synced main and all remote branches; started one health increment using existing project work. | [[2026-11-19-c01-health]] |
 | 2026-11-19 | C | Removed obsolete setup branch locally and on GitHub, preserved a local archive tag, and verified remote deletion. Health publication remains blocked by network/integration permissions. | [[2026-11-19-c01-health]] |
 | 2026-11-19 | A | Recorded the published Migration 001 schema and its supporting research in the vault. | [[projects/h02-database-migration]], [[resources/sqlite-schema-constraints]] |
-| 2026-11-20 | A | Committed the H02 runner and tests, integrated current main, and verified 78 tests plus Ruff. A fresh SQLite file recorded migrations 1 and 2 once each across two CLI runs. | [[projects/h02-database-migration]], [[archive/2026-11-18-h02-ai-session]] |
-
+| 2026-11-20 | A | Committed the H02 runner and tests, integrated current main, and verified 78 tests plus Ruff. A fresh SQLite file recorded migrations 1 and 2 once each across two CLI runs. | [[projects/h02-database-migration]] |
+| 2026-11-20 | A | Completed the H01 repository setup, corrected the clean-clone commands, and documented review and ownership rules. | [Contributor guide](../AGENTS.md), [setup](../README.md) |
+| 2026-11-20 | A | Moved migration setup into startup. Tested a second boot against the same file and checked that the user row survived. | [[projects/h03-sqlite-provider]] |
+| 2026-11-23 | A | Integrated reconciliation with the startup factory. Verified a real C04 deposit and rollback, plus 113 passing tests. | [[projects/h03-sqlite-provider]] |
+| 2026-11-23 | A | Updated the routine PR workflow to allow author review and merge after both required checks pass. | [Contributor guide](../AGENTS.md) |
 | 2026-11-19 | C | Added configured frontend-origin policy and 28 CORS cases on raghu/api-cors; opened PR #10 over health PR #9. All 44 local tests and both GitHub CI workflows passed. Human review pending. | [[2026-11-19-c01-cors]] |
-
 | 2026-11-19 | C | Added shared API error handling, generated request IDs, safe structured request logs and the C01 body limit. All 80 local tests passed; publication and CI recorded in the linked note. | [[2026-11-19-c01-request-safety]] |
-
 | 2026-11-19 | C | Added C03 provisional provider/service protocols and deterministic fakes under issue #12. All 95 local tests passed; transaction ownership and replay/failure cases covered. | [[2026-11-19-c03-contracts]] |
-
 | 2026-11-19 | C | Added the C02 OpenAPI proposal and static Prism fixtures under issue #14; 125 local tests passed, two full-validator cases await CI. | [[2026-11-19-c02-api-contract]] |
 | 2026-11-22 | C | Reconciled C01–C03 branch history, corrected validation and mock setup, and reviewed the new provider and reconciliation PRs. | [[projects/2026-11-22-github-review]] |
+| 2026-11-24 | C | Synchronized PR #11 with the merged SQLite provider. Startup migrations, health, and reconciliation work alongside the existing CORS and request safeguards. The combined branch passed 235 tests and Ruff. | [[projects/h03-sqlite-provider]] |
 
 This log records development and verification sessions.

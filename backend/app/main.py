@@ -1,6 +1,7 @@
-"""API factory for health, reconciliation, and the shared HTTP boundary."""
+"""API application factory, database startup, and shared HTTP boundaries."""
 
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import urlsplit
 
@@ -10,7 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from .api.admin import AdminCredentials, ReadSnapshot
 from .api.admin import router as admin_router
 from .api.health import router as health_router
-from .health import DatabaseReadiness, SqliteReadiness
+from .database import SqliteDatabase
+from .health import DatabaseReadiness
 from .http import RequestContextMiddleware, RequestSafetyMiddleware, install_error_handlers
 
 
@@ -47,19 +49,25 @@ def create_app(
     read_snapshot: ReadSnapshot | None = None,
     admin_credentials: AdminCredentials | None = None,
 ) -> FastAPI:
-    """Compose the API without creating a database or bootstrapping other features."""
+    """Create the API and initialize its database during ASGI startup."""
+    database = SqliteDatabase(Path(os.environ.get("DATABASE_PATH", "data/ledger.sqlite3")))
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        database.initialize()
+        yield
+
     application = FastAPI(
         title="Financial Ledger & Digital Wallet API",
-        description="Simulated-funds course project API.",
+        description="Simulated-funds course project. Health and administrative reconciliation.",
         version="0.0.1",
+        lifespan=lifespan,
     )
-    application.state.readiness = (
-        readiness
-        if readiness is not None
-        else SqliteReadiness(Path(os.environ.get("DATABASE_PATH", "data/ledger.sqlite3")))
+    application.state.database = database
+    application.state.readiness = database if readiness is None else readiness
+    application.state.read_snapshot = (
+        read_snapshot if read_snapshot is not None else lambda: database.transaction(write=False)
     )
-    # None preserves the reconciliation route's environment-backed defaults.
-    application.state.read_snapshot = read_snapshot
     application.state.admin_credentials = admin_credentials
     origin = _validate_frontend_origin(
         frontend_origin
