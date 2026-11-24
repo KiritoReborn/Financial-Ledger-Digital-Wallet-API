@@ -8,7 +8,9 @@ from db.migrate import apply_migrations
 
 @pytest.fixture
 def db_conn(tmp_path):
-    with closing(sqlite3.connect(tmp_path / "immutability.sqlite3")) as conn:
+    db_path = tmp_path / "immutability.sqlite3"
+    with closing(sqlite3.connect(db_path)) as conn:
+        assert conn.execute("PRAGMA journal_mode = WAL").fetchone() == ("wal",)
         apply_migrations(conn)
         conn.executescript(
             """
@@ -32,6 +34,34 @@ def db_conn(tmp_path):
             """
         )
         yield conn
+
+
+def test_real_migrations_and_triggers_installed_on_file_db(db_conn):
+    main_db_file = next(
+        file_path
+        for _, name, file_path in db_conn.execute("PRAGMA database_list").fetchall()
+        if name == "main"
+    )
+    assert main_db_file.endswith("immutability.sqlite3")
+
+    versions = db_conn.execute(
+        "SELECT version FROM schema_migrations ORDER BY version"
+    ).fetchall()
+    assert versions == [(1,), (2,)]
+
+    triggers = {
+        row[0]
+        for row in db_conn.execute(
+            "SELECT name FROM sqlite_schema WHERE type = 'trigger'"
+        ).fetchall()
+    }
+    assert {
+        "prevent_transactions_update",
+        "prevent_transactions_delete",
+        "prevent_ledger_entries_update",
+        "prevent_ledger_entries_delete",
+        "ledger_entries_check_wallet_currency",
+    }.issubset(triggers)
 
 
 def test_transactions_update_is_blocked(db_conn):
@@ -70,3 +100,54 @@ def test_ledger_entries_delete_is_blocked(db_conn):
 
     count = db_conn.execute("SELECT COUNT(*) FROM ledger_entries;").fetchone()[0]
     assert count == 2
+
+
+def test_wallet_balance_minor_updates_succeed(db_conn):
+    db_conn.execute(
+        "UPDATE wallets SET balance_minor = balance_minor + 2500 WHERE id = 'w-usr-inr';"
+    )
+    assert db_conn.execute(
+        "SELECT balance_minor FROM wallets WHERE id = 'w-usr-inr';"
+    ).fetchone() == (7500,)
+
+    db_conn.execute(
+        "UPDATE wallets SET balance_minor = balance_minor - 7500 WHERE id = 'w-usr-inr';"
+    )
+    db_conn.execute(
+        "UPDATE wallets SET balance_minor = balance_minor - 2500 WHERE id = 'w-sys-inr';"
+    )
+    db_conn.commit()
+
+    assert db_conn.execute(
+        "SELECT balance_minor FROM wallets WHERE id = 'w-usr-inr';"
+    ).fetchone() == (0,)
+    assert db_conn.execute(
+        "SELECT balance_minor FROM wallets WHERE id = 'w-sys-inr';"
+    ).fetchone() == (-7500,)
+    assert db_conn.execute("SELECT COUNT(*) FROM transactions;").fetchone()[0] == 1
+    assert db_conn.execute("SELECT COUNT(*) FROM ledger_entries;").fetchone()[0] == 2
+
+
+@pytest.mark.parametrize(
+    ("wallet_id", "direction", "entry_currency"),
+    [
+        ("w-usr-inr", "CREDIT", "USD"),
+        ("w-usr-inr", "DEBIT", "JPY"),
+        ("w-sys-inr", "DEBIT", "USD"),
+    ],
+)
+def test_ledger_entry_currency_mismatch_aborts(
+    db_conn, wallet_id, direction, entry_currency
+):
+    with pytest.raises(
+        sqlite3.IntegrityError,
+        match="Ledger entry currency must match its wallet currency",
+    ):
+        db_conn.execute(
+            "INSERT INTO ledger_entries "
+            "(txn_id, wallet_id, direction, amount_minor, currency, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?);",
+            ("txn-001", wallet_id, direction, 1000, entry_currency, "2026-11-17T00:00:00Z"),
+        )
+
+    assert db_conn.execute("SELECT COUNT(*) FROM ledger_entries;").fetchone()[0] == 2
