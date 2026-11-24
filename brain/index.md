@@ -17,7 +17,9 @@ Open `brain/` as the Obsidian vault. Use `inbox/` for material to review, `proje
 - [[projects/h02-database-migration|H02 · Schema and migrations]]
 - [[projects/h03-sqlite-provider|EI-SW-3 · SQLite connections per request]]
 
-Current C increment: [[2026-11-19-c01-health]]. Actual runs: [[log]].
+The [[projects/2026-11-22-github-review|GitHub review]] tracks the open pull
+requests, workflow failures and decisions awaiting the team. See [[log]] for
+verification history and [[projects/README|project notes]] for feature details.
 
 Existing team reference notes:
 - [[sqlite-immutability-triggers]]
@@ -28,4 +30,4 @@ Existing team reference notes:
 
 This feature branch adds its own evidence to the existing team notes. Full vault
 organization and brain-ingest remain A's H06 responsibility. The earlier setup
-branch is retained as a reference and is not a prerequisite for this feature PR.
+branch was deleted; its earlier notes are recoverable through a local archive tag.
