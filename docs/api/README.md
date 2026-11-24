@@ -46,7 +46,8 @@ server's per-request generation behavior.
 
 ## Validation
 
-Install `backend[dev]`, then run `python -m pytest -q backend/tests tests`.
+From the repository root, run `python -m pip install -e ".[dev]"`, then
+`python -m pytest -q backend/tests tests`.
 Tests check path/method coverage, the OpenAPI document, schemas and examples,
 money boundaries, unknown fields, UUID/currency validation and history limits.
 The real health route is compared with FastAPI's generated schema. Full

@@ -23,7 +23,7 @@ git clone https://github.com/harshith-raj-06/Financial-Ledger-Digital-Wallet-API
 cd Financial-Ledger-Digital-Wallet-API
 python3.11 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e "./backend[dev]"
+python -m pip install -e ".[dev]"
 cp .env.example .env
 # Edit .env to supply your own admin credentials.
 set -a
