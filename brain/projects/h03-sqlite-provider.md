@@ -29,8 +29,12 @@ out of the wheel. Building from the repository root includes the existing
 `db/` directory directly. CI installs the wheel in a fresh environment outside
 the checkout and initializes a database from the packaged migrations.
 
+On November 24, the combined API and packaging branch passed 235 Python tests
+and Ruff. The installed Windows wheel started the API outside the checkout,
+applied both migrations, and returned a request ID from `/health`.
+
 - [x] Check foreign keys, FULL synchronization, WAL and the 5000 ms timeout on fresh connections.
 - [x] Restart the API against the same file and check the stored data.
-- [ ] Run a real posting call with Raghu when C04 is ready.
+- [x] Tested C04 (`ba5f03a`) on the provider. A 75-minor-unit deposit produced two entries. A second deposit followed by a caller exception rolled back both balances and entries.
 
 [Provider](../../backend/app/database.py) · [Lock and rollback tests](../../backend/tests/test_database.py) · [Restart test](../../backend/tests/test_api_health.py)
