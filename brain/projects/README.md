@@ -15,6 +15,7 @@ source: "Final SRS section 6.3"
 - [[2026-11-19-c01-request-safety]] - bounded requests, request IDs and safe HTTP errors.
 - [[2026-11-19-c02-api-contract]] - OpenAPI and Prism verification.
 - [[2026-11-19-c03-contracts]] - service contracts and transaction fakes.
+- [[2026-11-20-c04-posting]] - posting, reversals and ledger integrity tests.
 - [[2026-11-22-github-review]] - pull requests, workflow findings and team decisions.
 
 Each feature increment adds a progress note to the existing team brain. The
