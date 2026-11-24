@@ -21,3 +21,13 @@ source: "Final SRS FR-5.1 to FR-5.4; revised work plan D03"
 **Integration notes:** `create_app(read_snapshot=...)` lets A's provider replace the default (`lambda: db.transaction(write=False)`). Once C's `http.py` is merged, the local `_error` helper can switch to the shared `error_response`. The admin token is compared against `ADMIN_TOKEN` directly. The FR-1.9 admin-user token hash and startup check remain with their owners.
 
 **Evidence:** `backend/tests/test_reconciliation.py`, `backend/tests/test_api_admin.py`; 108 tests passed and Ruff was clean on 2026-11-20.
+
+## Exact totals over the life of the ledger
+
+Cumulative debit and credit totals can exceed SQLite's signed 64-bit range
+even when every stored amount and wallet balance fits. A seeded ledger with
+several large deposits and reversals reproduced an integer overflow in
+reconciliation. The follow-up uses Python integers to add currency totals and
+wallet balances within the existing read snapshot. Transaction structure checks
+compare amounts after validating the debit and credit counts. See
+[`test_reconciliation.py`](../../backend/tests/test_reconciliation.py).
