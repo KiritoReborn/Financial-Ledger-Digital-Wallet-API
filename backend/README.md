@@ -1,10 +1,10 @@
 # Backend setup and database transactions
 
-The API exposes `GET /health` and `GET /admin/reconcile`. SQLite initialization runs during application startup.
+The API exposes `POST /users`, `GET /health` and `GET /admin/reconcile`. SQLite initialization runs during application startup.
 
 ## Install and run
 
-Use Python 3.11. From the repository root:
+Use Python 3.11. Set `ADMIN_TOKEN` and `ADMIN_KEY` in the process environment before starting the API. From the repository root:
 
 ```powershell
 py -3.11 -m venv .venv
@@ -16,6 +16,10 @@ $env:DATABASE_PATH = "C:\path\to\ledger.sqlite3"
 `DATABASE_PATH` defaults to `data/ledger.sqlite3`. On first startup, the app creates the parent directory, enables WAL and applies the numbered migrations. On restart it preserves recorded versions. An unreadable or corrupt database stops startup. The backend package includes the SQL and runner through the `backend/db` link to the shared migration directory. Windows developers building from a Git checkout need a checkout with symbolic links enabled, or can install the built wheel.
 
 `GET /health` reads the SQLite catalog in one read-only transaction. After startup an unreadable database yields a sanitized 500 response, and an expired SQLite busy timeout yields 503.
+
+## Register a user
+
+Send `{"name":"Example User","email":"user@example.org"}` as JSON to `POST /users`. Save the token returned with HTTP 201. Subsequent authenticated requests use `Authorization: Bearer <token>`. Duplicate addresses return 409 and invalid fields return 422. On restart, changing `ADMIN_TOKEN` rotates the admin credential.
 
 ## Financial request handlers
 

@@ -7,3 +7,6 @@ FR-5.2,D03,implemented-pending-review,pending,pending,backend/tests/test_reconci
 FR-5.3,D03,implemented-pending-review,pending,pending,backend/tests/test_api_admin.py,not-applicable,brain/projects/2026-11-20-d03-reconciliation.md
 FR-5.4,D03,implemented-pending-review,pending,pending,backend/tests/test_reconciliation.py,not-applicable,brain/projects/2026-11-20-d03-reconciliation.md
 NFR-SEC-2,D03,admin-key-check-implemented-pending-review,pending,pending,backend/tests/test_api_admin.py,not-applicable,brain/projects/2026-11-20-d03-reconciliation.md
+FR-1.1,H04,registration-locally-verified,pending,pending,backend/tests/test_registration.py,not-applicable,brain/projects/fr-1-user-registration.md
+FR-1.2,H04,token-issuance-and-lookup-locally-verified,pending,pending,backend/tests/test_registration.py,not-applicable,brain/projects/fr-1-user-registration.md
+FR-1.9,H04,admin-bootstrap-only-locally-verified,pending,pending,backend/tests/test_registration.py,not-applicable,brain/projects/fr-1-user-registration.md

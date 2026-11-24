@@ -25,4 +25,6 @@ This log tracks development work.
 
 ### 2026-11-23 · FR-1.2 bearer tokens
 
-Registration can issue a random token and store its SHA-256 digest in the column from [[projects/h02-database-migration]]. The lookup test uses two users and checks that presenting a stored digest fails. The admin route shares the header parser and keeps its separate key check. Registration and startup bootstrap are the next integration steps.
+Registration can issue a random token and store its SHA-256 digest in the column from [[projects/h02-database-migration]]. The lookup test uses two users and checks that presenting a stored digest fails. The admin route shares the header parser and keeps its separate key check.
+
+The registration endpoint and admin bootstrap passed the HTTP and restart tests. Concurrent registrations produced a single user, and rotating the admin token preserved the admin ID. See [[projects/fr-1-user-registration]].

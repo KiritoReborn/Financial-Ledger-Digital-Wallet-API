@@ -17,8 +17,9 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
-from ..auth import bearer_token, token_digest
+from ..auth import ADMIN_ID, authenticated_user_id, bearer_token, token_digest
 from ..services.reconciliation import reconcile, sqlite_read_snapshot
+from .errors import database_error, error_response
 
 router = APIRouter()
 
@@ -48,13 +49,6 @@ def is_admin(credentials: AdminCredentials, authorization: str | None,
     key_ok = hmac.compare_digest(token_digest(admin_key or ""), token_digest(credentials.key))
     configured = bool(credentials.token) and bool(credentials.key)
     return configured & token_ok & key_ok
-
-
-def _error(status: int, code: str, message: str, headers=None) -> JSONResponse:
-    error: dict[str, object] = {"code": code, "message": message}
-    if status != 500:
-        error["details"] = None
-    return JSONResponse(status_code=status, content={"error": error}, headers=headers)
 
 
 class ReconciliationChecks(BaseModel):
@@ -98,15 +92,15 @@ def reconcile_ledger(request: Request) -> ReconciliationResult | JSONResponse:
     """Run all four read-only checks on one snapshot; mismatches still return 200."""
     if not is_admin(_credentials(request), request.headers.get("authorization"),
                     request.headers.get("x-admin-key")):
-        return _error(401, "UNAUTHENTICATED", "Authentication is required.",
+        return error_response(401, "UNAUTHENTICATED", "Authentication is required.",
                       headers={"WWW-Authenticate": "Bearer"})
     try:
         with _read_snapshot(request)() as conn:
+            if authenticated_user_id(conn, request.headers.get("authorization")) != ADMIN_ID:
+                return error_response(401, "UNAUTHENTICATED", "Authentication is required.",
+                                      headers={"WWW-Authenticate": "Bearer"})
             report = reconcile(conn)
     # The HTTP boundary must not expose SQL, paths or exception text (NFR-SEC-7).
     except Exception as error:  # noqa: BLE001
-        sqlite_code = getattr(error, "sqlite_errorcode", 0) or 0
-        if isinstance(error, sqlite3.OperationalError) and sqlite_code & 0xFF == sqlite3.SQLITE_BUSY:
-            return _error(503, "DATABASE_BUSY", "Database is busy. Try again later.")
-        return _error(500, "INTERNAL_ERROR", "An internal error occurred.")
+        return database_error(error)
     return ReconciliationResult.model_validate(report.as_dict())
