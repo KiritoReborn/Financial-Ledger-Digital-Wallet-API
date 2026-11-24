@@ -28,5 +28,6 @@ source: "User-directed incremental C01 work"
 | 2026-11-20 | C | Tested posting against the merged migrations. All 241 Python tests passed. A separate 50-writer run produced 33 transfers and 17 insufficient-funds rejections. | [[projects/2026-11-20-c04-posting]] |
 | 2026-11-22 | C | Reconciled C01–C03 branch history, corrected validation and mock setup, and reviewed the new provider and reconciliation PRs. | [[projects/2026-11-22-github-review]] |
 | 2026-11-24 | C | Synchronized PR #11 with the merged SQLite provider. Startup migrations, health, and reconciliation work alongside the existing CORS and request safeguards. The combined branch passed 235 tests and Ruff. | [[projects/h03-sqlite-provider]] |
+| 2026-11-24 | C | Prepared C05 for review with rollback and process-recovery tests against the migrated SQLite database. All 291 tests and Ruff passed. | [[projects/2026-11-24-c05-recovery]] |
 
 This log records development and verification sessions.

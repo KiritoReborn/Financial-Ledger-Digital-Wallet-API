@@ -1,5 +1,7 @@
 """C04 posting on file-backed SQLite with the application's migrations."""
 
+import multiprocessing
+import os
 import sqlite3
 from contextlib import closing
 from dataclasses import replace
@@ -37,14 +39,18 @@ def apply(connection, poster, operation):
         return poster(connection, operation)
 
 
+def connect(path):
+    connection = sqlite3.connect(path, isolation_level=None, timeout=5)
+    connection.execute("PRAGMA synchronous=FULL")
+    connection.execute("PRAGMA foreign_keys=ON")
+    return connection
+
+
 @pytest.fixture
 def ledger(tmp_path):
     path = tmp_path / "posting.sqlite3"
-    connection = sqlite3.connect(path, isolation_level=None)
+    connection = connect(path)
     connection.execute("PRAGMA journal_mode=WAL")
-    connection.execute("PRAGMA synchronous=FULL")
-    connection.execute("PRAGMA foreign_keys=ON")
-    connection.execute("PRAGMA busy_timeout=5000")
     apply_migrations(connection)
     for number in (101, 102):
         user = f"00000000-0000-4000-8000-{number:012d}"
@@ -74,7 +80,6 @@ def ledger(tmp_path):
     try:
         yield connection, poster, path
     finally:
-        connection.rollback()
         connection.close()
 
 
@@ -441,3 +446,103 @@ def test_description_is_bound_as_data_and_idempotency_is_left_to_b(ledger):
     )
     assert connection.execute("SELECT COUNT(*) FROM wallets").fetchone()[0] == 4
     assert connection.execute("SELECT COUNT(*) FROM idempotency_keys").fetchone()[0] == 0
+
+def test_http_failure_rolls_back_posting_and_replay_record(ledger, monkeypatch):
+    from app.main import create_app
+    from fastapi.testclient import TestClient
+
+    connection, poster, path = ledger
+    monkeypatch.setenv("DATABASE_PATH", str(path))
+    app = create_app()
+    fail_after_writes = True
+
+    @app.post("/_test_atomic_transfer", status_code=201)
+    def post():
+        with app.state.database.transaction() as writer:
+            posted = poster(writer, request())
+            user_id = writer.execute(
+                "SELECT user_id FROM wallets WHERE id = ?", (str(ALICE),)
+            ).fetchone()[0]
+            # Stand in for the replay row written by B's service on this connection.
+            writer.execute(
+                "INSERT INTO idempotency_keys "
+                "(user_id, scope, key, request_hash, response_status, response_body, txn_id, created_at) "
+                "VALUES (?, 'TRANSFER', 'rollback-test', 'fixture-hash', 201, '{}', ?, ?)",
+                (user_id, str(posted.txn_id), STAMP.isoformat()),
+            )
+            if fail_after_writes:
+                raise RuntimeError("Injected failure inside the caller's transaction.")
+            return {"txn_id": str(posted.txn_id)}
+
+    original = snapshot(connection)
+    with TestClient(app) as client:
+        response = client.post("/_test_atomic_transfer")
+        assert response.status_code == 500
+        assert response.json()["error"]["code"] == "INTERNAL_ERROR"
+        assert snapshot(connection) == original
+        assert connection.execute(
+            "SELECT count(*) FROM idempotency_keys"
+        ).fetchone() == (0,)
+
+        fail_after_writes = False
+        response = client.post("/_test_atomic_transfer")
+        assert response.status_code == 201
+
+    txn_id = response.json()["txn_id"]
+    assert connection.execute("SELECT txn_id FROM idempotency_keys").fetchall() == [
+        (txn_id,)
+    ]
+    assert connection.execute(
+        "SELECT count(*) FROM ledger_entries WHERE txn_id = ?", (txn_id,)
+    ).fetchone() == (2,)
+
+
+def exit_after_posting(path, commit, txn_id):
+    connection = connect(path)
+    connection.execute("BEGIN IMMEDIATE")
+    poster = LedgerPoster(
+        clock=fakes.FixedClock(STAMP), ids=fakes.SequenceIds([txn_id])
+    )
+    poster(connection, request())
+    if commit:
+        connection.commit()
+    # Skip Python and SQLite cleanup to exercise recovery after abrupt process exit.
+    os._exit(73)
+
+
+@pytest.mark.parametrize("commit", [False, True], ids=["before-commit", "after-commit"])
+def test_sqlite_recovers_after_posting_process_exits(ledger, commit):
+    connection, _, path = ledger
+    before = snapshot(connection)
+    txn_id = uuid4()
+    connection.close()
+    process = multiprocessing.get_context("spawn").Process(
+        target=exit_after_posting, args=(path, commit, txn_id)
+    )
+    process.start()
+    try:
+        process.join(timeout=30)
+        assert process.exitcode == 73
+    finally:
+        if process.is_alive():
+            process.kill()
+            process.join(timeout=10)
+        process.close()
+
+    with closing(connect(path)) as reopened:
+        assert reopened.execute("PRAGMA integrity_check").fetchone() == ("ok",)
+        assert reopened.execute("PRAGMA foreign_key_check").fetchall() == []
+        if not commit:
+            assert snapshot(reopened) == before
+            return
+        assert reopened.execute(
+            "SELECT type FROM transactions WHERE id = ?", (str(txn_id),)
+        ).fetchone() == ("TRANSFER",)
+        assert reopened.execute(
+            "SELECT wallet_id, direction, amount_minor FROM ledger_entries WHERE txn_id = ? ORDER BY id",
+            (str(txn_id),),
+        ).fetchall() == [(str(ALICE), "DEBIT", 100), (str(BOB), "CREDIT", 100)]
+        assert reopened.execute(
+            "SELECT balance_minor FROM wallets WHERE id IN (?, ?) ORDER BY id",
+            (str(ALICE), str(BOB)),
+        ).fetchall() == [(900,), (600,)]
