@@ -10,6 +10,7 @@ jobs:
         with: { python-version: "3.11" }
       - run: pip install ruff pytest
       - run: ruff check .
+      - run: python scripts/validate_repo_docs.py
       - run: python -m pytest -q tests
       - uses: gitleaks/gitleaks-action@v2
         env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
