@@ -28,6 +28,7 @@ Existing team reference notes:
 - [[sqlite-read-only-transaction-snapshots]]
 - [[resources/sqlite-schema-constraints|SQLite schema constraints]]
 - [[resources/sqlite-migration-transactions|SQLite migration transactions]]
+- [[resources/idempotency-keys-and-request-fingerprints|Idempotency keys and request fingerprints]]
 
 This feature branch adds its own evidence to the existing team notes. Full vault
 organization and brain-ingest remain A's H06 responsibility. The earlier setup
