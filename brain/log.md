@@ -30,6 +30,7 @@ source: "User-directed incremental C01 work"
 | 2026-11-24 | C | Synchronized PR #11 with the merged SQLite provider. Startup migrations, health, and reconciliation work alongside the existing CORS and request safeguards. The combined branch passed 235 tests and Ruff. | [[projects/h03-sqlite-provider]] |
 | 2026-11-24 | C | Prepared C05 for review with rollback and process-recovery tests against the migrated SQLite database. All 291 tests and Ruff passed. | [[projects/2026-11-24-c05-recovery]] |
 | 2026-11-25 | D | Hardened D01 immutability trigger tests against real Migration 001/002 on WAL file-backed SQLite, adding wallet balance mutability and DB-3 currency mismatch coverage. | [[sqlite-immutability-triggers]] |
+| 2026-11-25 | B | Added the B01 run_idempotent core: Idempotency-Key validation, SHA-256 request fingerprint, replay and conflict on the caller's BEGIN IMMEDIATE transaction, recorded in ADR 0002. 35 new tests on real migrated SQLite; all 345 tests and Ruff passed. | [[projects/2026-11-25-b01-idempotency]], [[resources/idempotency-keys-and-request-fingerprints]] |
 
 This log records development and verification sessions.
 
