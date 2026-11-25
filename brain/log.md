@@ -43,3 +43,5 @@ Registration can issue a random token and store its SHA-256 digest in the column
 The registration endpoint and admin bootstrap passed the HTTP and restart tests. Concurrent registrations produced a single user, and rotating the admin token preserved the admin ID. See [[projects/fr-1-user-registration]].
 
 2026-11-24 · Integrated registration with the shared HTTP handlers on main. Ruff and all 305 tests passed with the combined API and posting suites.
+
+2026-11-24 · FR-1.3. Added wallet creation locally using the bearer lookup from [[projects/fr-1-user-registration]] and the write transaction from [[projects/h03-sqlite-provider]]. Two concurrent requests for the same owner and currency produced one 201 and one 422. All 308 tests passed.
