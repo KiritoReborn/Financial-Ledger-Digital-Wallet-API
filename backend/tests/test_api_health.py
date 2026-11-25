@@ -98,8 +98,9 @@ def test_sqlite_busy_uses_the_documented_error(tmp_path, monkeypatch):
     }
 
 
-def test_product_schema_exposes_registration_health_and_reconciliation():
+def test_product_schema_exposes_expected_routes():
     paths = create_app().openapi()["paths"]
-    assert set(paths) == {"/health", "/users", "/admin/reconcile", "/wallets/{id}/deposit"}
+    assert set(paths) == {"/health", "/users", "/admin/reconcile", "/wallets", "/wallets/{id}/deposit"}
+    assert paths["/wallets"]["post"]["security"] == [{"bearerAuth": []}]
     assert "get" in paths["/health"]
     assert not paths["/health"]["get"].get("security")
