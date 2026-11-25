@@ -12,6 +12,7 @@ from .api.admin import AdminCredentials, ReadSnapshot
 from .api.admin import router as admin_router
 from .api.deposit import router as deposit_router
 from .api.health import router as health_router
+from .api.transfers import router as transfers_router
 from .api.users import router as users_router
 from .api.wallets import router as wallets_router
 from .auth import bootstrap_admin
@@ -109,4 +110,5 @@ def create_app(
     application.include_router(health_router)
     application.include_router(admin_router)
     application.include_router(deposit_router)
+    application.include_router(transfers_router)
     return application
