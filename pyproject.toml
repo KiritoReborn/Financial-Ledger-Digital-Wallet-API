@@ -32,6 +32,7 @@ where = ["backend", "."]
 include = ["app", "app.*", "db"]
 
 [tool.setuptools.package-data]
+app = ["currency_exponents.json"]
 db = ["migrations/*.sql"]
 
 [tool.ruff]

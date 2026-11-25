@@ -1,8 +1,6 @@
 """B02 POST /wallets/{id}/deposit over the real app and migrated SQLite (FR-1.6, FR-2.4 to FR-2.9).
 
-Users register through the real POST /users. Wallets are inserted directly
-because Member A's wallet routes and system-wallet start-up seeding (H05,
-FR-1.9) are not on main yet.
+Startup supplies the system wallets used by the posting service.
 """
 
 from uuid import UUID, uuid4
@@ -49,14 +47,19 @@ def add_wallet(app, currency, user_id=None):
     return wallet_id
 
 
+def system_wallet(app, currency):
+    with app.state.database.transaction(write=False) as conn:
+        return conn.execute("SELECT id FROM wallets WHERE currency=? AND is_system=1", (currency,)).fetchone()[0]
+
+
 @pytest.fixture
 def ledger(app, client):
     """Alice and Bob each own an INR wallet; INR and JPY system wallets exist."""
     alice, alice_auth = register(client, "alice")
     bob, bob_auth = register(client, "bob")
     return {
-        "system_inr": add_wallet(app, "INR"),
-        "system_jpy": add_wallet(app, "JPY"),
+        "system_inr": system_wallet(app, "INR"),
+        "system_jpy": system_wallet(app, "JPY"),
         "alice_inr": add_wallet(app, "INR", alice),
         "bob_inr": add_wallet(app, "INR", bob),
         "alice": alice_auth,
@@ -273,7 +276,9 @@ def test_largest_allowed_amount_is_accepted(app, client, ledger):
 
 
 def test_failed_deposit_stores_no_key_and_same_key_can_retry(app, client, ledger):
-    alice_usd = add_wallet(app, "USD", ledger["alice_id"])  # No USD system wallet exists yet.
+    alice_usd = add_wallet(app, "USD", ledger["alice_id"])
+    with app.state.database.transaction() as conn:
+        conn.execute("DELETE FROM wallets WHERE currency='USD' AND is_system=1")
     before = state(app)
 
     failed = deposit(client, alice_usd, ledger["alice"], key="retry-me")
