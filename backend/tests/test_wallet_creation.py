@@ -58,3 +58,29 @@ def test_concurrent_wallet_creation_has_one_winner():
             responses = sorted((f.result() for f in futures), key=lambda r: r.status_code)
         assert [r.status_code for r in responses] == [201, 422]
         assert responses[1].json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_wallet_reads_enforce_ownership():
+    from uuid import uuid4
+
+    with TestClient(create_app()) as client:
+
+        def register(name):
+            user = client.post("/users", json={"name": name, "email": name + "@example.org"}).json()
+            return {"Authorization": "Bearer " + user["token"]}
+
+        alice, bob = register("Alice"), register("Bob")
+        wallet = client.post("/wallets", headers=alice, json={"currency": "USD"}).json()
+        url = "/wallets/" + wallet["id"]
+        assert client.get("/wallets", headers=alice).json() == {"wallets": [wallet]}
+        assert client.get("/wallets", headers=bob).json() == {"wallets": []}
+        assert client.get("/wallets?user_id=" + wallet["user_id"], headers=bob).status_code == 422
+        assert client.get(url, headers=alice).json() == wallet
+        for path, headers, status in [
+            (url, bob, 403),
+            ("/wallets/" + str(uuid4()), alice, 404),
+            ("/wallets/invalid", alice, 422),
+            (url, {}, 401),
+            ("/wallets", {}, 401),
+        ]:
+            assert client.get(path, headers=headers).status_code == status
