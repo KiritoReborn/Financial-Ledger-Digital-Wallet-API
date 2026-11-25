@@ -9,6 +9,12 @@ import pytest
 
 pytestmark = pytest.mark.usefixtures("api_environment")
 
+TestClient = pytest.importorskip(
+    "fastapi.testclient", reason="API checks require backend[dev]."
+).TestClient
+create_app = pytest.importorskip(
+    "app.main", reason="Backend package is required."
+).create_app
 contracts = pytest.importorskip(
     "app.contracts", reason="Backend package is required."
 )
@@ -269,3 +275,224 @@ def test_reverse_with_real_ledger_poster_and_reconcile(sqlite_db):
         }
         assert conn.execute("SELECT COUNT(*) FROM transactions").fetchone()[0] == 4
         assert reconcile(conn).as_dict()["ok"] is True
+
+
+ADMIN_TOKEN = "test-only-token"
+ADMIN_KEY = "test-only-key"
+ADMIN_HEADERS = {"Authorization": f"Bearer {ADMIN_TOKEN}", "X-Admin-Key": ADMIN_KEY}
+
+
+def _setup_live_ledger(client) -> dict[str, str]:
+    alice_res = client.post("/users", json={"name": "Alice", "email": "alice@example.test"})
+    bob_res = client.post("/users", json={"name": "Bob", "email": "bob@example.test"})
+    assert alice_res.status_code == 201 and bob_res.status_code == 201
+    alice_token = alice_res.json()["token"]
+    bob_token = bob_res.json()["token"]
+
+    alice_w = client.post(
+        "/wallets",
+        json={"currency": "INR"},
+        headers={"Authorization": f"Bearer {alice_token}"},
+    )
+    bob_w = client.post(
+        "/wallets",
+        json={"currency": "INR"},
+        headers={"Authorization": f"Bearer {bob_token}"},
+    )
+    assert alice_w.status_code == 201 and bob_w.status_code == 201
+    alice_wallet_id = alice_w.json()["id"]
+    bob_wallet_id = bob_w.json()["id"]
+
+    deposit = client.post(
+        f"/wallets/{alice_wallet_id}/deposit",
+        json={"amount_minor": 10_000},
+        headers={
+            "Authorization": f"Bearer {alice_token}",
+            "Idempotency-Key": "e2e-dep-1",
+        },
+    )
+    assert deposit.status_code == 201
+    transfer = client.post(
+        "/transfers",
+        json={
+            "from_wallet_id": alice_wallet_id,
+            "to_wallet_id": bob_wallet_id,
+            "amount_minor": 4_000,
+            "currency": "INR",
+        },
+        headers={
+            "Authorization": f"Bearer {alice_token}",
+            "Idempotency-Key": "e2e-xfer-1",
+        },
+    )
+    assert transfer.status_code == 201
+    return {
+        "alice_token": alice_token,
+        "bob_token": bob_token,
+        "alice_wallet_id": alice_wallet_id,
+        "bob_wallet_id": bob_wallet_id,
+        "deposit_id": deposit.json()["id"],
+        "transfer_id": transfer.json()["id"],
+    }
+
+
+def test_e2e_reverse_transfer_and_deposit_pass_reconciliation():
+    with TestClient(create_app()) as client:
+        data = _setup_live_ledger(client)
+
+        rev_xfer = client.post(
+            f"/transactions/{data['transfer_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "rev-xfer-1"},
+        )
+        assert rev_xfer.status_code == 201
+        assert rev_xfer.headers["idempotent-replayed"] == "false"
+        assert UUID(rev_xfer.headers["x-request-id"]).version == 4
+        body = rev_xfer.json()
+        assert body["type"] == "REVERSAL"
+        assert body["reverses_txn_id"] == data["transfer_id"]
+        assert [(e["wallet_id"], e["direction"], e["amount_minor"]) for e in body["entries"]] == [
+            (data["bob_wallet_id"], "DEBIT", 4_000),
+            (data["alice_wallet_id"], "CREDIT", 4_000),
+        ]
+
+        alice_bal = client.get(
+            f"/wallets/{data['alice_wallet_id']}",
+            headers={"Authorization": f"Bearer {data['alice_token']}"},
+        ).json()["balance_minor"]
+        bob_bal = client.get(
+            f"/wallets/{data['bob_wallet_id']}",
+            headers={"Authorization": f"Bearer {data['bob_token']}"},
+        ).json()["balance_minor"]
+        assert (alice_bal, bob_bal) == (10_000, 0)
+        assert client.get("/admin/reconcile", headers=ADMIN_HEADERS).json()["ok"] is True
+
+        rev_dep = client.post(
+            f"/transactions/{data['deposit_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "rev-dep-1"},
+            json={},
+        )
+        assert rev_dep.status_code == 201
+        assert client.get(
+            f"/wallets/{data['alice_wallet_id']}",
+            headers={"Authorization": f"Bearer {data['alice_token']}"},
+        ).json()["balance_minor"] == 0
+        assert client.get("/admin/reconcile", headers=ADMIN_HEADERS).json()["ok"] is True
+
+
+def test_e2e_reversal_replay_and_idempotency_conflict():
+    with TestClient(create_app()) as client:
+        data = _setup_live_ledger(client)
+
+        first = client.post(
+            f"/transactions/{data['transfer_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "shared-rev-key"},
+        )
+        replay = client.post(
+            f"/transactions/{data['transfer_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "shared-rev-key"},
+        )
+        conflict = client.post(
+            f"/transactions/{data['deposit_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "shared-rev-key"},
+        )
+
+    assert first.status_code == 201
+    assert first.headers["idempotent-replayed"] == "false"
+    assert replay.status_code == 201
+    assert replay.headers["idempotent-replayed"] == "true"
+    assert replay.json() == first.json()
+    assert conflict.status_code == 422
+    assert conflict.json()["error"]["code"] == "IDEMPOTENCY_CONFLICT"
+
+
+def test_e2e_insufficient_funds_rollback_allows_same_key_retry():
+    with TestClient(create_app()) as client:
+        data = _setup_live_ledger(client)
+
+        failed = client.post(
+            f"/transactions/{data['deposit_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "retryable-rev-key"},
+        )
+        assert failed.status_code == 422
+        assert failed.json()["error"]["code"] == "INSUFFICIENT_FUNDS"
+
+        assert (
+            client.post(
+                f"/transactions/{data['transfer_id']}/reverse",
+                headers={**ADMIN_HEADERS, "Idempotency-Key": "restore-alice"},
+            ).status_code
+            == 201
+        )
+
+        retried = client.post(
+            f"/transactions/{data['deposit_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "retryable-rev-key"},
+        )
+        assert retried.status_code == 201
+        assert retried.headers["idempotent-replayed"] == "false"
+
+
+def test_e2e_reversal_eligibility_and_input_validation():
+    with TestClient(create_app()) as client:
+        data = _setup_live_ledger(client)
+
+        not_found = client.post(
+            f"/transactions/{UNKNOWN_TXN_ID}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "val-404"},
+        )
+        assert not_found.status_code == 404
+        assert not_found.json()["error"]["code"] == "NOT_FOUND"
+
+        rev = client.post(
+            f"/transactions/{data['transfer_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "val-ok"},
+        )
+        assert rev.status_code == 201
+        rev_id = rev.json()["id"]
+
+        not_reversible = client.post(
+            f"/transactions/{rev_id}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "val-rev-of-rev"},
+        )
+        assert not_reversible.status_code == 422
+        assert not_reversible.json()["error"]["code"] == "NOT_REVERSIBLE"
+
+        already = client.post(
+            f"/transactions/{data['transfer_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "val-dup"},
+        )
+        assert already.status_code == 409
+        assert already.json()["error"]["code"] == "ALREADY_REVERSED"
+
+        missing_key = client.post(
+            f"/transactions/{data['transfer_id']}/reverse",
+            headers=ADMIN_HEADERS,
+        )
+        blank_key = client.post(
+            f"/transactions/{data['transfer_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "   "},
+        )
+        bad_key = client.post(
+            f"/transactions/{data['transfer_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "bad key!"},
+        )
+        bad_id = client.post(
+            "/transactions/not-a-uuid/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "val-bad-id"},
+        )
+        bad_body = client.post(
+            f"/transactions/{data['transfer_id']}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "val-bad-body"},
+            json={"unexpected": True},
+        )
+
+    assert missing_key.status_code == 400
+    assert missing_key.json()["error"]["code"] == "IDEMPOTENCY_KEY_MISSING"
+    assert blank_key.status_code == 400
+    assert blank_key.json()["error"]["code"] == "IDEMPOTENCY_KEY_MISSING"
+    assert bad_key.status_code == 422
+    assert bad_key.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert bad_id.status_code == 422
+    assert bad_id.json()["error"]["code"] == "VALIDATION_ERROR"
+    assert bad_body.status_code == 422
+    assert bad_body.json()["error"]["code"] == "VALIDATION_ERROR"
