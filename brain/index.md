@@ -19,6 +19,13 @@ Open `brain/` as the Obsidian vault. Use `inbox/` for material to review, `proje
 - [[projects/fr-1-user-registration|FR-1.1 and FR-1.2 · Registration and bearer tokens]]
 - [[projects/fr-1-wallets|Wallet creation, ownership and system wallets]]
 
+## Immutability, reversal, and reconciliation
+
+- [[2026-11-20-d03-reconciliation|D03 · Read-only ledger reconciliation]]
+- [[projects/2026-11-25-d02-reversal|D02 · Idempotent transaction reversals]]
+- [[projects/2026-11-25-d04-d08-security-ci|D04 & D08 · Admin security and CI validators]]
+- [[projects/2026-11-25-d10-reconciliation-review|D10 · Financial integrity and reconciliation review]]
+
 The [[projects/2026-11-22-github-review|GitHub review]] tracks the open pull
 requests, workflow failures and decisions awaiting the team. See [[log]] for
 verification history and [[projects/README|project notes]] for feature details.
