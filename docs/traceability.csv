@@ -48,3 +48,8 @@ FR-2.4,B02,deposit-endpoint-review-pending,https://github.com/KiritoReborn/Finan
 FR-2.7,B02,deposit-endpoint-review-pending,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/issues/34,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/35,backend/tests/test_deposit.py,not-applicable,brain/projects/2026-11-25-b02-deposit.md
 FR-2.8,B02,deposit-endpoint-review-pending,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/issues/34,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/35,backend/tests/test_deposit.py,not-applicable,brain/projects/2026-11-25-b02-deposit.md
 FR-2.9,B02,deposit-endpoint-review-pending,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/issues/34,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/35,backend/tests/test_deposit.py,not-applicable,brain/projects/2026-11-25-b02-deposit.md
+FR-1.3,H05,wallets-tested,,,backend/tests/test_wallet_creation.py,not-applicable,brain/projects/fr-1-wallets.md
+FR-1.4,H05,wallets-tested,,,backend/tests/test_wallet_creation.py,not-applicable,brain/projects/fr-1-wallets.md
+FR-1.5,H05,wallets-tested,,,backend/tests/test_wallet_creation.py,not-applicable,brain/projects/fr-1-wallets.md
+FR-1.8,H05,wallets-tested,,,backend/tests/test_wallet_creation.py,not-applicable,brain/projects/fr-1-wallets.md
+FR-1.9,H05,wallets-tested,,,backend/tests/test_wallet_creation.py,not-applicable,brain/projects/fr-1-wallets.md

@@ -84,3 +84,22 @@ def test_wallet_reads_enforce_ownership():
             ("/wallets", {}, 401),
         ]:
             assert client.get(path, headers=headers).status_code == status
+
+
+def test_restart_preserves_system_wallets_and_restores_missing_currency():
+    from app.currencies import CURRENCY_EXPONENTS
+
+    assert dict(CURRENCY_EXPONENTS) == {"INR": 2, "USD": 2, "JPY": 0}
+    app = create_app()
+    query = "SELECT currency, id, balance_minor, user_id FROM wallets WHERE is_system=1 ORDER BY currency"
+    with TestClient(app), app.state.database.transaction() as conn:
+        original = conn.execute(query).fetchall()
+        assert [r[0] for r in original] == ["INR", "JPY", "USD"]
+        assert all(r[2:] == (0, None) for r in original)
+        conn.execute("UPDATE wallets SET balance_minor=-123 WHERE is_system=1 AND currency='INR'")
+        conn.execute("DELETE FROM wallets WHERE is_system=1 AND currency='JPY'")
+    with TestClient(app), app.state.database.transaction(write=False) as conn:
+        restored = conn.execute(query).fetchall()
+        assert len(restored) == 3 and restored[0] == ("INR", original[0][1], -123, None)
+        assert restored[1][0] == "JPY" and restored[1][2:] == (0, None)
+        assert restored[2] == original[2]
