@@ -62,3 +62,17 @@ def test_local_check_skill_cites_existing_second_brain_notes():
     for link in wikilinks:
         target = Path(link).stem
         assert target in vault_stems, f"Broken Second Brain citation: [[{link}]]"
+
+
+def test_local_check_skill_documents_root_packaging_and_failure_paths():
+    _, body = _parse_frontmatter(SKILL_FILE.read_text(encoding="utf-8"))
+
+    for required_snippet in (
+        'pip install -e ".[dev]"',
+        "python -m build",
+        "503 DATABASE_BUSY",
+        "500 INTERNAL_ERROR",
+        "Cleanup",
+        "FAIL",
+    ):
+        assert required_snippet in body, f"Missing expected packaging/failure text: {required_snippet}"
