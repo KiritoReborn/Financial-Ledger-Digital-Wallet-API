@@ -15,7 +15,7 @@ from .api.health import router as health_router
 from .api.users import router as users_router
 from .api.wallets import router as wallets_router
 from .auth import bootstrap_admin
-from .database import SqliteDatabase
+from .database import SqliteDatabase, initialize_system_wallets
 from .health import DatabaseReadiness
 from .http import RequestContextMiddleware, RequestSafetyMiddleware, install_error_handlers
 
@@ -67,6 +67,7 @@ def create_app(
         database.initialize()
         with database.transaction() as conn:
             bootstrap_admin(conn, credentials.token)
+            initialize_system_wallets(conn)
         app.state.admin_credentials = credentials
         yield
 

@@ -5,8 +5,11 @@ from collections.abc import Iterator
 from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from uuid import uuid4
 
 from db.migrate import apply_migrations
+
+from .currencies import CURRENCY_EXPONENTS
 
 
 @dataclass(frozen=True)
@@ -41,3 +44,14 @@ class SqliteDatabase:
     def check(self) -> None:
         with self.transaction(write=False) as conn:
             conn.execute("SELECT name FROM sqlite_schema LIMIT 1").fetchone()
+
+
+def initialize_system_wallets(conn: sqlite3.Connection) -> None:
+    """Keep one clearing wallet per supported currency, preserving existing balances."""
+    for currency in CURRENCY_EXPONENTS:
+        conn.execute(
+            """INSERT INTO wallets (id, currency, is_system, created_at)
+               VALUES (?, ?, 1, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+               ON CONFLICT(currency) WHERE is_system = 1 DO NOTHING""",
+            (str(uuid4()), currency),
+        )

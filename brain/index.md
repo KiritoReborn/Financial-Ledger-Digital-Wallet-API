@@ -17,6 +17,7 @@ Open `brain/` as the Obsidian vault. Use `inbox/` for material to review, `proje
 - [[projects/h02-database-migration|H02 · Schema and migrations]]
 - [[projects/h03-sqlite-provider|EI-SW-3 · SQLite connections per request]]
 - [[projects/fr-1-user-registration|FR-1.1 and FR-1.2 · Registration and bearer tokens]]
+- [[projects/fr-1-wallets|Wallet creation, ownership and system wallets]]
 
 The [[projects/2026-11-22-github-review|GitHub review]] tracks the open pull
 requests, workflow failures and decisions awaiting the team. See [[log]] for

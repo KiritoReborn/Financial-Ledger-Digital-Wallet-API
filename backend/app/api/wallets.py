@@ -7,10 +7,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel, ConfigDict, UUID4
+from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 
 from ..auth import authenticated_user_id
 from ..contracts import Currency, UtcClock, UuidIds
+from ..currencies import CURRENCY_EXPONENTS
 from ..http import ApiError, error_response
 from .errors import database_error
 
@@ -20,7 +21,14 @@ router = APIRouter(dependencies=[Depends(bearer)])
 
 class WalletRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    currency: Currency
+    currency: str = Field(json_schema_extra={"enum": list(CURRENCY_EXPONENTS)})
+
+    @field_validator("currency")
+    @classmethod
+    def supported_currency(cls, value: str) -> str:
+        if value not in CURRENCY_EXPONENTS:
+            raise ValueError("Unsupported wallet currency")
+        return value
 
 
 class Wallet(BaseModel):
