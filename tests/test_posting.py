@@ -476,8 +476,8 @@ def test_http_failure_rolls_back_posting_and_replay_record(ledger, monkeypatch):
                 raise RuntimeError("Injected failure inside the caller's transaction.")
             return {"txn_id": str(posted.txn_id)}
 
-    original = snapshot(connection)
     with TestClient(app) as client:
+        original = snapshot(connection)
         response = client.post("/_test_atomic_transfer")
         assert response.status_code == 500
         assert response.json()["error"]["code"] == "INTERNAL_ERROR"
