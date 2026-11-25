@@ -18,6 +18,7 @@ source: "Final SRS section 6.3"
 - [[2026-11-20-c04-posting]] - posting, reversals and ledger integrity tests.
 - [[2026-11-22-github-review]] - pull requests, workflow findings and team decisions.
 - [[2026-11-24-c05-recovery]] - rollback, replay-row atomicity and abrupt process exit checks.
+- [[2026-11-25-b01-idempotency]] - B01 idempotency key validation, request fingerprint, replay and conflict.
 
 Each feature increment adds a progress note to the existing team brain. The
 obsolete setup branch was removed; A still owns the full vault/ingest work.
