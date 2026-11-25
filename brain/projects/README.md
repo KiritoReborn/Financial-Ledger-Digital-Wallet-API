@@ -20,6 +20,7 @@ source: "Final SRS section 6.3"
 - [[2026-11-24-c05-recovery]] - rollback, replay-row atomicity and abrupt process exit checks.
 - [[2026-11-25-b01-idempotency]] - B01 idempotency key validation, request fingerprint, replay and conflict.
 - [[2026-11-25-b01b-idempotency-concurrency]] - B01b concurrent same-key requests, process-level race and rollback.
+- [[2026-11-25-b02-deposit]] - B02 idempotent deposit endpoint, ownership checks and integer-only amounts.
 
 Each feature increment adds a progress note to the existing team brain. The
 obsolete setup branch was removed; A still owns the full vault/ingest work.
