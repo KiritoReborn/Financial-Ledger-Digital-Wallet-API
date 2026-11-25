@@ -1,6 +1,9 @@
 """D02 reversal service unit tests with C03 contract fakes and C04 LedgerPoster."""
 
 import sqlite3
+import threading
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import UUID
@@ -496,3 +499,135 @@ def test_e2e_reversal_eligibility_and_input_validation():
     assert bad_id.json()["error"]["code"] == "VALIDATION_ERROR"
     assert bad_body.status_code == 422
     assert bad_body.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+def test_concurrent_double_reversal_distinct_keys_allows_only_one():
+    app = create_app()
+    with TestClient(app) as setup_client:
+        data = _setup_live_ledger(setup_client)
+
+    barrier = threading.Barrier(2)
+
+    def send(key: str):
+        with TestClient(create_app()) as worker:
+            barrier.wait(timeout=5)
+            return worker.post(
+                f"/transactions/{data['transfer_id']}/reverse",
+                headers={**ADMIN_HEADERS, "Idempotency-Key": key},
+            )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        r1, r2 = [
+            fut.result()
+            for fut in (pool.submit(send, "race-rev-1"), pool.submit(send, "race-rev-2"))
+        ]
+
+    assert sorted([r1.status_code, r2.status_code]) == [201, 409]
+    rejected = r1 if r1.status_code == 409 else r2
+    assert rejected.json()["error"]["code"] == "ALREADY_REVERSED"
+
+    with app.state.database.transaction(write=False) as conn:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM transactions WHERE type = 'REVERSAL'"
+        ).fetchone()[0]
+        assert count == 1
+        assert reconcile(conn).as_dict()["ok"] is True
+
+
+def test_concurrent_same_key_reversal_creates_once_and_replays():
+    app = create_app()
+    with TestClient(app) as setup_client:
+        data = _setup_live_ledger(setup_client)
+
+    barrier = threading.Barrier(2)
+
+    def send():
+        with TestClient(create_app()) as worker:
+            barrier.wait(timeout=5)
+            return worker.post(
+                f"/transactions/{data['transfer_id']}/reverse",
+                headers={**ADMIN_HEADERS, "Idempotency-Key": "concurrent-same-rev-key"},
+            )
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        r1, r2 = [fut.result() for fut in (pool.submit(send), pool.submit(send))]
+
+    assert (r1.status_code, r2.status_code) == (201, 201)
+    assert r1.json() == r2.json()
+    assert sorted(
+        [r1.headers["idempotent-replayed"], r2.headers["idempotent-replayed"]]
+    ) == ["false", "true"]
+
+    with app.state.database.transaction(write=False) as conn:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM transactions WHERE type = 'REVERSAL'"
+        ).fetchone()[0]
+        assert count == 1
+        assert reconcile(conn).as_dict()["ok"] is True
+
+
+def test_reverse_auth_and_non_admin_user_rejected():
+    with TestClient(create_app()) as client:
+        data = _setup_live_ledger(client)
+        bad_header_sets = [
+            {},
+            {"X-Admin-Key": ADMIN_KEY},
+            {"Authorization": f"Bearer {ADMIN_TOKEN}"},
+            {"Authorization": "Bearer wrong-token", "X-Admin-Key": ADMIN_KEY},
+            {"Authorization": f"Bearer {ADMIN_TOKEN}", "X-Admin-Key": "wrong-key"},
+            {"Authorization": f"Bearer {data['alice_token']}"},
+            {"Authorization": f"Bearer {data['alice_token']}", "X-Admin-Key": ADMIN_KEY},
+        ]
+        for headers in bad_header_sets:
+            resp = client.post(
+                f"/transactions/{data['transfer_id']}/reverse",
+                headers={**headers, "Idempotency-Key": "auth-reject-key"},
+            )
+            assert resp.status_code == 401
+            assert resp.json()["error"]["code"] == "UNAUTHENTICATED"
+            assert resp.headers["www-authenticate"] == "Bearer"
+
+
+def test_reverse_database_busy_and_unexpected_error_are_sanitized():
+    @contextmanager
+    def busy_tx():
+        err = sqlite3.OperationalError("locked /secret/path SELECT * FROM wallets")
+        err.sqlite_errorcode = sqlite3.SQLITE_BUSY
+        raise err
+        yield  # pragma: no cover
+
+    @contextmanager
+    def broken_tx():
+        raise sqlite3.DatabaseError(
+            f"corrupt /secret/db.sqlite3 token={ADMIN_TOKEN} key={ADMIN_KEY}"
+        )
+        yield  # pragma: no cover
+
+    app = create_app()
+    with TestClient(app) as client:
+        app.state.write_transaction = busy_tx
+        busy = client.post(
+            f"/transactions/{TRANSFER_TXN_ID}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "busy-probe-key"},
+        )
+        app.state.write_transaction = broken_tx
+        broken = client.post(
+            f"/transactions/{TRANSFER_TXN_ID}/reverse",
+            headers={**ADMIN_HEADERS, "Idempotency-Key": "broken-probe-key"},
+        )
+
+    assert busy.status_code == 503
+    assert busy.json() == {
+        "error": {
+            "code": "DATABASE_BUSY",
+            "message": "Database is busy. Try again later.",
+            "details": None,
+        }
+    }
+    assert "/secret/" not in busy.text
+    assert broken.status_code == 500
+    assert broken.json() == {
+        "error": {"code": "INTERNAL_ERROR", "message": "An internal error occurred."}
+    }
+    for leaked in ("/secret/", ADMIN_TOKEN, ADMIN_KEY, "broken-probe-key"):
+        assert leaked not in broken.text
