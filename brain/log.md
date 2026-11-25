@@ -33,6 +33,7 @@ source: "User-directed incremental C01 work"
 | 2026-11-25 | B | Added the B01 run_idempotent core: Idempotency-Key validation, SHA-256 request fingerprint, replay and conflict on the caller's BEGIN IMMEDIATE transaction, recorded in ADR 0002. 35 new tests on real migrated SQLite; all 345 tests and Ruff passed. | [[projects/2026-11-25-b01-idempotency]], [[resources/idempotency-keys-and-request-fingerprints]] |
 | 2026-11-25 | B | Added B01b concurrency and rollback tests: same-key requests from 2 and 10 threads and from 2 processes post once, different keys lose no update, and a failed holder leaves no key. 7 new tests, run five times; all 352 tests and Ruff passed. | [[projects/2026-11-25-b01b-idempotency-concurrency]] |
 | 2026-11-25 | B | Added the B02 deposit endpoint POST /wallets/{id}/deposit with authentication, ownership, strict integer amounts and idempotent replay. 35 new HTTP tests on migrated SQLite. | [[projects/2026-11-25-b02-deposit]] |
+| 2026-11-25 | B | Added the B03 transfer endpoint POST /transfers with sender ownership, same-currency and funds checks through C04 posting, strict request validation and idempotent replay. 56 new HTTP tests on migrated SQLite; all 448 tests and Ruff passed. | [[projects/2026-11-25-b03-transfers]] |
 
 This log records development and verification sessions.
 
