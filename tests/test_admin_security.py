@@ -3,7 +3,7 @@
 import sqlite3
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import contextmanager
+from contextlib import closing, contextmanager
 from uuid import UUID
 
 import pytest
@@ -371,3 +371,106 @@ def test_sqlite_busy_sanitizes_internal_details():
         assert resp.json() == expected
         assert "wallets" not in resp.text
         assert str(db_path) not in resp.text
+
+
+def test_reconciliation_detects_direct_sqlite_balance_tampering():
+    app = create_app()
+    db_path = app.state.database.path
+    with TestClient(app) as client:
+        data = _seed_live_ledger(client)
+        assert (
+            client.post(
+                f"/transactions/{data['transfer_id']}/reverse",
+                headers={**ADMIN_AUTH, "Idempotency-Key": "tamper-clean-rev"},
+            ).status_code
+            == 201
+        )
+        clean = client.get("/admin/reconcile", headers=ADMIN_AUTH)
+        assert clean.status_code == 200
+        assert clean.json() == {
+            "ok": True,
+            "checks": {
+                "currencies_balanced": True,
+                "transactions_valid": True,
+                "wallet_balances_match": True,
+                "entry_currencies_match": True,
+            },
+            "mismatches": [],
+        }
+
+    with closing(sqlite3.connect(db_path)) as conn, conn:
+        sys_inr_id = conn.execute(
+            "SELECT id FROM wallets WHERE is_system = 1 AND currency = 'INR'"
+        ).fetchone()[0]
+        conn.execute(
+            "UPDATE wallets SET balance_minor = balance_minor + 500 WHERE id = ?",
+            (data["bob_wallet_id"],),
+        )
+        conn.execute(
+            "UPDATE wallets SET balance_minor = 0 WHERE id = ?",
+            (sys_inr_id,),
+        )
+
+    with TestClient(create_app()) as client:
+        before = db_path.read_bytes()
+        tampered = client.get("/admin/reconcile", headers=ADMIN_AUTH)
+        after = db_path.read_bytes()
+
+    assert after == before
+    assert tampered.status_code == 200
+    body = tampered.json()
+    assert body["ok"] is False
+    assert body["checks"]["wallet_balances_match"] is False
+    by_wallet = {item["wallet_id"]: item for item in body["mismatches"]}
+    assert by_wallet[data["bob_wallet_id"]] == {
+        "check": "wallet_balances_match",
+        "currency": "INR",
+        "wallet_id": data["bob_wallet_id"],
+        "expected": 0,
+        "actual": 500,
+    }
+    assert by_wallet[sys_inr_id] == {
+        "check": "wallet_balances_match",
+        "currency": "INR",
+        "wallet_id": sys_inr_id,
+        "expected": -10_000,
+        "actual": 0,
+    }
+
+
+def test_reconciliation_detects_direct_currency_and_unbalanced_tampering():
+    app = create_app()
+    db_path = app.state.database.path
+    with TestClient(app) as client:
+        data = _seed_live_ledger(client)
+
+    bad_txn_id = "20000000-0000-4000-8000-000000000099"
+    timestamp = "2026-11-25T00:00:00Z"
+    with closing(sqlite3.connect(db_path)) as conn, conn:
+        conn.execute(
+            "INSERT INTO transactions (id, type, created_at) VALUES (?, 'DEPOSIT', ?)",
+            (bad_txn_id, timestamp),
+        )
+        conn.execute(
+            "INSERT INTO ledger_entries "
+            "(txn_id, wallet_id, direction, amount_minor, currency, created_at) "
+            "VALUES (?, ?, 'CREDIT', 250, 'INR', ?)",
+            (bad_txn_id, data["bob_wallet_id"], timestamp),
+        )
+        conn.execute(
+            "UPDATE wallets SET currency = 'USD' WHERE id = ?",
+            (data["bob_wallet_id"],),
+        )
+
+    with TestClient(create_app()) as client:
+        report = client.get("/admin/reconcile", headers=ADMIN_AUTH)
+
+    assert report.status_code == 200
+    body = report.json()
+    assert body["ok"] is False
+    assert body["checks"] == {
+        "currencies_balanced": False,
+        "transactions_valid": False,
+        "wallet_balances_match": False,
+        "entry_currencies_match": False,
+    }
