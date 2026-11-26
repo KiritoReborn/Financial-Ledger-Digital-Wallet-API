@@ -53,3 +53,5 @@ The registration endpoint and admin bootstrap passed the HTTP and restart tests.
 2026-11-24 · FR-1.3. Added wallet creation locally using the bearer lookup from [[projects/fr-1-user-registration]] and the write transaction from [[projects/h03-sqlite-provider]]. Two concurrent requests for the same owner and currency produced one 201 and one 422. All 308 tests passed.
 
 2026-11-25 · Completed [[projects/fr-1-wallets]]. Verified owner-only reads, foreign and unknown IDs, system-wallet recovery across restarts, and deposit compatibility.
+
+2026-11-26 · Ran brain-ingest on SRS §2.1 and captured the caller-owned SQLite transaction boundary in [[inbox/transaction-ownership]]. The inbox entry is ready for filing with brain-refine.

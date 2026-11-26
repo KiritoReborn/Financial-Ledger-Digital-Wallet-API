@@ -103,6 +103,14 @@ def validate_brain(repo_root: Path) -> tuple[set[str], list[str]]:
         title = fields.get("title")
         if not isinstance(title, str) or not title.strip():
             errors.append(f"{rel}: frontmatter 'title' must be a non-empty string")
+        if md_path.parent == brain_dir / "inbox":
+            for key in ("author", "date", "source", "requirements", "tags"):
+                if not fields.get(key) or fields[key] == "[]":
+                    errors.append(f"{rel}: inbox note requires {key}")
+            if fields.get("category") != "inbox":
+                errors.append(f"{rel}: inbox note requires category inbox")
+            if not _extract_wikilinks(body):
+                errors.append(f"{rel}: inbox note requires a related wikilink")
         for link in _extract_wikilinks(body):
             target = Path(link).stem
             if target not in stems:
