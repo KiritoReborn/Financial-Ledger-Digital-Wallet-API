@@ -22,6 +22,7 @@ source: "Final SRS section 6.3"
 - [[2026-11-25-b01b-idempotency-concurrency]] - B01b concurrent same-key requests, process-level race and rollback.
 - [[2026-11-25-b02-deposit]] - B02 idempotent deposit endpoint, ownership checks and integer-only amounts.
 - [[2026-11-25-b03-transfers]] - B03 idempotent transfer endpoint, sender ownership, currency and funds checks.
+- [[2026-11-26-b04-exactly-once-suite]] - B04 exactly-once and negative suite over HTTP, 50 competing transfers.
 
 Each feature increment adds a progress note to the existing team brain. The
 obsolete setup branch was removed; A still owns the full vault/ingest work.
