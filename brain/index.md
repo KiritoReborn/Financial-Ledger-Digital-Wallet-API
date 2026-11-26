@@ -38,6 +38,6 @@ Existing team reference notes:
 - [[resources/sqlite-migration-transactions|SQLite migration transactions]]
 - [[resources/idempotency-keys-and-request-fingerprints|Idempotency keys and request fingerprints]]
 
-This feature branch adds its own evidence to the existing team notes. Full vault
-organization and brain-ingest remain A's H06 responsibility. The earlier setup
-branch was deleted; its earlier notes are recoverable through a local archive tag.
+## Inbox
+
+- [[inbox/transaction-ownership|Transaction ownership in the API]]
