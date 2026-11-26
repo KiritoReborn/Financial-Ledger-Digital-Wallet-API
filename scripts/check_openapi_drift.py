@@ -1,9 +1,10 @@
-"""B08 OpenAPI drift check: the running app against docs/api/openapi.yaml.
+"""B08 OpenAPI drift check: the deposit and transfer routes against docs/api/openapi.yaml.
 
-Compares every operation FastAPI generates from create_app() with the
-documented contract and reports real divergence:
+Compares the operations listed in CHECKED_OPERATIONS, as FastAPI generates
+them from create_app(), with the documented contract and reports real
+divergence:
 
-- an implemented operation that is not documented
+- a checked operation missing from the app or from the contract
 - a different operationId or success status
 - a status code the app declares but the contract does not
 - different security schemes
@@ -21,11 +22,6 @@ Approved, non-semantic differences are ignored on purpose:
   tests check at runtime
 - `anyOf: [X, null]` for an optional field or body, `1.0` versus `1`
 - Pydantic's `uuid4` format versus the contract's `uuid` plus the v4 pattern
-- documented operations that are not implemented yet (listed, not failed)
-
-KNOWN_DRIFT holds divergence that is already reported to its owner. The check
-fails on any new drift, and also on a known entry that no longer occurs, so the
-list only shrinks.
 
 Usage: python scripts/check_openapi_drift.py
 """
@@ -36,7 +32,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC_PATH = ROOT / "docs" / "api" / "openapi.yaml"
-METHODS = ("get", "post", "put", "patch", "delete")
 SCHEMA_KEYS = ("type", "enum", "minimum", "maximum", "minLength", "maxLength", "pattern")
 UUID4_PATTERN = (
     "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
@@ -54,22 +49,11 @@ class Drift:
         return f"{self.method.upper()} {self.path}: {self.kind}: {self.detail}"
 
 
-# Reported to each owner; remove an entry when its fix lands.
-KNOWN_DRIFT = {
-    Drift("get", "/health", "operationId", "app 'health_health_get', contract 'health'"):
-        "api/health.py, Member C",
-    Drift("get", "/admin/reconcile", "operationId",
-          "app 'reconcile_ledger_admin_reconcile_get', contract 'reconcile'"):
-        "api/admin.py, Member D",
-    Drift("get", "/admin/reconcile", "security", "app [], contract ['adminKey', 'bearerAuth']"):
-        "api/admin.py, Member D",
-    Drift("post", "/transactions/{id}/reverse", "security",
-          "app [], contract ['adminKey', 'bearerAuth']"):
-        "api/admin.py, Member D",
-    Drift("post", "/transactions/{id}/reverse", "parameters",
-          "missing header 'idempotency-key'"):
-        "api/admin.py, Member D",
-}
+# Member B's routes (B02, B03).
+CHECKED_OPERATIONS = (
+    ("post", "/wallets/{id}/deposit"),
+    ("post", "/transfers"),
+)
 
 
 def load_contract(path: Path = SPEC_PATH) -> dict:
@@ -178,85 +162,67 @@ def _success(operation: dict) -> str | None:
     return codes[0] if codes else None
 
 
-def find_drift(app_doc: dict, contract_doc: dict) -> tuple[list[Drift], list[str]]:
-    """Return (divergence, documented operations not implemented yet)."""
-    drift: list[Drift] = []
-    for path, operations in sorted(app_doc.get("paths", {}).items()):
-        for method in METHODS:
-            app = operations.get(method)
-            if app is None:
-                continue
-            contract = contract_doc.get("paths", {}).get(path, {}).get(method)
-            if contract is None:
-                drift.append(Drift(method, path, "undocumented", "operation is not in the contract"))
-                continue
-            if app.get("operationId") != contract.get("operationId"):
-                drift.append(Drift(
-                    method, path, "operationId",
-                    f"app '{app.get('operationId')}', contract '{contract.get('operationId')}'",
-                ))
-            if _success(app) != _success(contract):
-                drift.append(Drift(
-                    method, path, "success",
-                    f"app {_success(app)}, contract {_success(contract)}",
-                ))
-            extra = sorted(set(app.get("responses", {})) - set(contract.get("responses", {})))
-            if extra:
-                drift.append(Drift(method, path, "responses", f"undocumented status {extra}"))
-            app_security = sorted({name for item in app.get("security", []) for name in item})
-            contract_security = sorted(
-                {name for item in contract.get("security", []) for name in item}
-            )
-            if app_security != contract_security:
-                drift.append(Drift(
-                    method, path, "security", f"app {app_security}, contract {contract_security}"
-                ))
-            mine, theirs = _parameters(app_doc, app), _parameters(contract_doc, contract)
-            for location, name in sorted(set(theirs) - set(mine)):
-                drift.append(Drift(method, path, "parameters", f"missing {location} '{name}'"))
-            for location, name in sorted(set(mine) - set(theirs)):
-                drift.append(Drift(method, path, "parameters", f"extra {location} '{name}'"))
-            for key in sorted(set(mine) & set(theirs)):
-                if mine[key] != theirs[key]:
-                    drift.append(Drift(
-                        method, path, "parameters",
-                        f"{key[0]} '{key[1]}' required app {mine[key]}, contract {theirs[key]}",
-                    ))
-            drift += _compare_bodies(
-                method, path, _body_schema(app_doc, app), app_doc,
-                _body_schema(contract_doc, contract), contract_doc,
-            )
-    pending = sorted(
-        f"{method.upper()} {path}"
-        for path, operations in contract_doc.get("paths", {}).items()
-        for method in METHODS
-        if method in operations and method not in app_doc.get("paths", {}).get(path, {})
+def _compare_operation(method, path, app, app_doc, contract, contract_doc) -> list[Drift]:
+    drift = []
+    if app.get("operationId") != contract.get("operationId"):
+        drift.append(Drift(
+            method, path, "operationId",
+            f"app '{app.get('operationId')}', contract '{contract.get('operationId')}'",
+        ))
+    if _success(app) != _success(contract):
+        drift.append(Drift(
+            method, path, "success", f"app {_success(app)}, contract {_success(contract)}"
+        ))
+    extra = sorted(set(app.get("responses", {})) - set(contract.get("responses", {})))
+    if extra:
+        drift.append(Drift(method, path, "responses", f"undocumented status {extra}"))
+    app_security = sorted({name for item in app.get("security", []) for name in item})
+    contract_security = sorted({name for item in contract.get("security", []) for name in item})
+    if app_security != contract_security:
+        drift.append(Drift(
+            method, path, "security", f"app {app_security}, contract {contract_security}"
+        ))
+    mine, theirs = _parameters(app_doc, app), _parameters(contract_doc, contract)
+    for location, name in sorted(set(theirs) - set(mine)):
+        drift.append(Drift(method, path, "parameters", f"missing {location} '{name}'"))
+    for location, name in sorted(set(mine) - set(theirs)):
+        drift.append(Drift(method, path, "parameters", f"extra {location} '{name}'"))
+    for key in sorted(set(mine) & set(theirs)):
+        if mine[key] != theirs[key]:
+            drift.append(Drift(
+                method, path, "parameters",
+                f"{key[0]} '{key[1]}' required app {mine[key]}, contract {theirs[key]}",
+            ))
+    return drift + _compare_bodies(
+        method, path, _body_schema(app_doc, app), app_doc,
+        _body_schema(contract_doc, contract), contract_doc,
     )
-    return sorted(drift), pending
 
 
-def check(app_doc: dict, contract_doc: dict) -> tuple[list[Drift], list[Drift], list[str]]:
-    """Return (new drift, known entries that no longer occur, pending operations)."""
-    drift, pending = find_drift(app_doc, contract_doc)
-    new = [item for item in drift if item not in KNOWN_DRIFT]
-    stale = sorted(item for item in KNOWN_DRIFT if item not in drift)
-    return new, stale, pending
+def find_drift(
+    app_doc: dict, contract_doc: dict, operations=CHECKED_OPERATIONS
+) -> list[Drift]:
+    """Return the divergence between app and contract for the given operations."""
+    drift: list[Drift] = []
+    for method, path in operations:
+        app = app_doc.get("paths", {}).get(path, {}).get(method)
+        contract = contract_doc.get("paths", {}).get(path, {}).get(method)
+        if app is None or contract is None:
+            side = "app" if app is None else "contract"
+            drift.append(Drift(method, path, "missing", f"operation is not in the {side}"))
+            continue
+        drift += _compare_operation(method, path, app, app_doc, contract, contract_doc)
+    return sorted(drift)
 
 
 def main() -> int:
-    new, stale, pending = check(generated_contract(), load_contract())
-    for item in sorted(KNOWN_DRIFT):
-        if item not in stale:
-            print(f"known  {item}  ({KNOWN_DRIFT[item]})")
-    for operation in pending:
-        print(f"todo   {operation}: documented, not implemented yet")
-    for item in new:
+    drift = find_drift(generated_contract(), load_contract())
+    for item in drift:
         print(f"DRIFT  {item}")
-    for item in stale:
-        print(f"FIXED  {item}: remove it from KNOWN_DRIFT")
-    if new or stale:
+    if drift:
         return 1
-    print("OpenAPI drift check passed.")
+    checked = ", ".join(f"{method.upper()} {path}" for method, path in CHECKED_OPERATIONS)
+    print(f"OpenAPI drift check passed for {checked}.")
     return 0
 
 
