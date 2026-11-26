@@ -19,7 +19,11 @@ from pydantic import UUID4, BaseModel, ConfigDict, Field
 from ..auth import authenticated_user_id
 from ..contracts import Currency, IdempotencyRequest
 from ..http import ApiError
-from ..services.idempotency import parse_idempotency_key, run_idempotent
+from ..services.idempotency import (
+    idempotency_key_openapi,
+    parse_idempotency_key,
+    run_idempotent,
+)
 from ..services.transfers import TransferInput, post_transfer
 from .errors import database_error
 
@@ -54,6 +58,7 @@ def _authenticate(conn: sqlite3.Connection, request: Request) -> UUID:
     operation_id="createTransfer",
     tags=["transfers"],
     summary="Transfer simulated funds idempotently",
+    openapi_extra=idempotency_key_openapi(),
     responses={
         400: {"description": "Idempotency-Key is missing or blank."},
         401: {"description": "Missing or invalid bearer token."},
