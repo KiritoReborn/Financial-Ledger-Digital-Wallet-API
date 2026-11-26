@@ -48,9 +48,7 @@ and `BEGIN IMMEDIATE` transaction, as under a real server.
 
 The file passed five repeated runs.
 
-**Defects.** The suite found none in B's code. The full local run found
-DEF-001 in `docs/defect-log.md`: a Member D test needs SQLite 3.46, but Windows
-Python 3.11.9 ships 3.45.1. It is reported to the owner, and the file is left
-unchanged.
+**Defects.** The suite found none in deposit, transfer or idempotency
+behaviour. It started `docs/defect-log.md`.
 
 Related: [[projects/2026-11-25-b03-transfers]], [[projects/2026-11-25-b01b-idempotency-concurrency]], [[log]].

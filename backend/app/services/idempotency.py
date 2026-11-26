@@ -32,6 +32,29 @@ _KEY_RULE = (
 )
 
 
+def idempotency_key_openapi() -> dict[str, object]:
+    """OpenAPI `openapi_extra` documenting the required Idempotency-Key header.
+
+    Routes still read the header themselves through parse_idempotency_key, so a
+    missing key keeps returning 400 IDEMPOTENCY_KEY_MISSING instead of FastAPI's 422.
+    """
+    return {
+        "parameters": [
+            {
+                "name": "Idempotency-Key",
+                "in": "header",
+                "required": True,
+                "schema": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 128,
+                    "pattern": "^[A-Za-z0-9_.:-]+$",
+                },
+            }
+        ]
+    }
+
+
 def parse_idempotency_key(value: str | None) -> str:
     """Validate the Idempotency-Key header value (FR-2.4).
 
