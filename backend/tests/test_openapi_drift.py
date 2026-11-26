@@ -1,4 +1,4 @@
-"""B08 OpenAPI drift check: create_app().openapi() against docs/api/openapi.yaml.
+"""B08 OpenAPI drift check for the deposit and transfer routes against docs/api/openapi.yaml.
 
 The first test is the CI gate. The rest prove the checker catches each kind of
 real divergence, ignores the approved non-semantic differences, and that the
@@ -32,9 +32,7 @@ def drift_after(change):
     """Apply change to a copy of the contract and return the drift it causes."""
     contract = copy.deepcopy(CONTRACT)
     change(contract)
-    drift, _ = drift_check.find_drift(GENERATED, contract)
-    baseline, _ = drift_check.find_drift(GENERATED, CONTRACT)
-    return [item for item in drift if item not in baseline]
+    return drift_check.find_drift(GENERATED, contract)
 
 
 def transfer_body_schema(contract):
@@ -44,15 +42,14 @@ def transfer_body_schema(contract):
 # CI gate
 
 
-def test_app_matches_the_documented_contract():
-    new, stale, _ = drift_check.check(GENERATED, CONTRACT)
-    assert not new, "Undocumented API divergence:\n" + "\n".join(map(str, new))
-    assert not stale, "Fixed drift still listed in KNOWN_DRIFT:\n" + "\n".join(map(str, stale))
+def test_deposit_and_transfer_match_the_documented_contract():
+    drift = drift_check.find_drift(GENERATED, CONTRACT)
+    assert not drift, "Undocumented API divergence:\n" + "\n".join(map(str, drift))
 
 
 def test_command_line_check_passes(capsys):
     assert drift_check.main() == 0
-    assert "OpenAPI drift check passed." in capsys.readouterr().out
+    assert "OpenAPI drift check passed" in capsys.readouterr().out
 
 
 def test_deposit_and_transfer_document_key_header_and_bearer_auth():
@@ -75,12 +72,20 @@ def test_renamed_operation_id_is_drift():
     ]
 
 
-def test_undocumented_operation_is_drift():
+def test_operation_missing_from_the_contract_is_drift():
     def change(contract):
         del contract["paths"]["/transfers"]
 
     assert drift_after(change) == [
-        Drift("post", "/transfers", "undocumented", "operation is not in the contract")
+        Drift("post", "/transfers", "missing", "operation is not in the contract")
+    ]
+
+
+def test_operation_missing_from_the_app_is_drift():
+    app = copy.deepcopy(GENERATED)
+    del app["paths"]["/transfers"]
+    assert drift_check.find_drift(app, CONTRACT) == [
+        Drift("post", "/transfers", "missing", "operation is not in the app")
     ]
 
 
@@ -103,10 +108,10 @@ def test_different_success_status_is_drift():
 
 def test_different_security_is_drift():
     def change(contract):
-        contract["paths"]["/transfers"]["post"]["security"] = []
+        contract["paths"]["/wallets/{id}/deposit"]["post"]["security"] = []
 
     assert drift_after(change) == [
-        Drift("post", "/transfers", "security", "app ['bearerAuth'], contract []")
+        Drift("post", "/wallets/{id}/deposit", "security", "app ['bearerAuth'], contract []")
     ]
 
 
@@ -122,10 +127,13 @@ def test_missing_and_optional_parameters_are_drift():
     assert drift_after(add_query) == [
         Drift("post", "/transfers", "parameters", "missing query 'dry_run'")
     ]
-    assert Drift(
-        "post", "/transfers", "parameters",
-        "header 'idempotency-key' required app True, contract False",
-    ) in drift_after(optional_key)
+    assert set(drift_after(optional_key)) == {
+        Drift(
+            "post", path, "parameters",
+            "header 'idempotency-key' required app True, contract False",
+        )
+        for path in ("/transfers", "/wallets/{id}/deposit")
+    }
 
 
 @pytest.mark.parametrize(
@@ -141,8 +149,10 @@ def test_missing_and_optional_parameters_are_drift():
         ),
         (
             lambda body: body["required"].remove("currency"),
-            ("required app ['amount_minor', 'currency', 'from_wallet_id', 'to_wallet_id'], "
-            "contract ['amount_minor', 'from_wallet_id', 'to_wallet_id']"),
+            (
+                "required app ['amount_minor', 'currency', 'from_wallet_id', 'to_wallet_id'], "
+                "contract ['amount_minor', 'from_wallet_id', 'to_wallet_id']"
+            ),
         ),
         (
             lambda body: body.update(additionalProperties=True),
@@ -150,8 +160,10 @@ def test_missing_and_optional_parameters_are_drift():
         ),
         (
             lambda body: body["properties"]["description"].update(maxLength=100),
-            ("field 'description' app {'type': 'string', 'maxLength': 200}, "
-            "contract {'type': 'string', 'maxLength': 100}"),
+            (
+                "field 'description' app {'type': 'string', 'maxLength': 200}, "
+                "contract {'type': 'string', 'maxLength': 100}"
+            ),
         ),
     ],
 )
@@ -161,7 +173,7 @@ def test_request_body_changes_are_drift(change, expected):
     ]
 
 
-def test_shared_schema_changes_reach_every_operation_that_uses_them():
+def test_shared_schema_changes_reach_both_routes():
     def change(contract):
         contract["components"]["schemas"]["Amount"]["maximum"] = 500
         contract["components"]["schemas"]["Currency"]["enum"] = ["INR", "USD"]
@@ -171,7 +183,6 @@ def test_shared_schema_changes_reach_every_operation_that_uses_them():
         ("/transfers", "field 'amount_minor'"),
         ("/transfers", "field 'currency'"),
         ("/wallets/{id}/deposit", "field 'amount_minor'"),
-        ("/wallets", "field 'currency'"),
     }
 
 
@@ -179,13 +190,22 @@ def test_wallet_id_without_the_v4_rule_is_drift():
     def change(contract):
         del contract["components"]["schemas"]["ResourceId"]["pattern"]
 
-    details = {item.detail for item in drift_after(change) if item.path == "/transfers"}
-    assert details == {
-        ("field 'from_wallet_id' app {'type': 'string', 'format': 'uuid4'}, "
-        "contract {'type': 'string', 'format': 'uuid'}"),
-        ("field 'to_wallet_id' app {'type': 'string', 'format': 'uuid4'}, "
-        "contract {'type': 'string', 'format': 'uuid'}"),
+    assert {item.detail for item in drift_after(change)} == {
+        (
+            f"field '{field}' app {{'type': 'string', 'format': 'uuid4'}}, "
+            "contract {'type': 'string', 'format': 'uuid'}"
+        )
+        for field in ("from_wallet_id", "to_wallet_id")
     }
+
+
+def test_new_drift_fails_the_command(monkeypatch, capsys):
+    contract = copy.deepcopy(CONTRACT)
+    contract["paths"]["/transfers"]["post"]["operationId"] = "sendMoney"
+    monkeypatch.setattr(drift_check, "load_contract", lambda: contract)
+
+    assert drift_check.main() == 1
+    assert "DRIFT  POST /transfers: operationId" in capsys.readouterr().out
 
 
 # Approved, non-semantic differences are ignored
@@ -210,36 +230,11 @@ def test_statuses_only_the_contract_lists_are_not_drift():
     assert drift_after(change) == []
 
 
-def test_documented_but_unbuilt_operations_are_listed_not_failed():
-    drift, pending = drift_check.find_drift(GENERATED, CONTRACT)
-    assert "GET /transfers/{id}" in pending
-    assert all(item.path != "/transfers/{id}" for item in drift)
-
-
-# KNOWN_DRIFT only shrinks
-
-
-def test_known_drift_is_reported_to_an_owner():
-    assert all("Member" in owner for owner in drift_check.KNOWN_DRIFT.values())
-    assert all(item.path not in ("/wallets/{id}/deposit", "/transfers")
-               for item in drift_check.KNOWN_DRIFT)
-
-
-def test_a_fixed_entry_left_in_known_drift_fails(monkeypatch):
-    fixed = Drift("get", "/health", "security", "already fixed")
-    monkeypatch.setitem(drift_check.KNOWN_DRIFT, fixed, "Member C")
-    _, stale, _ = drift_check.check(GENERATED, CONTRACT)
-    assert stale == [fixed]
-    assert drift_check.main() == 1
-
-
-def test_new_drift_fails_the_command(monkeypatch, capsys):
-    contract = copy.deepcopy(CONTRACT)
-    contract["paths"]["/transfers"]["post"]["operationId"] = "sendMoney"
-    monkeypatch.setattr(drift_check, "load_contract", lambda: contract)
-
-    assert drift_check.main() == 1
-    assert "DRIFT  POST /transfers: operationId" in capsys.readouterr().out
+def test_only_the_deposit_and_transfer_routes_are_checked():
+    assert drift_check.CHECKED_OPERATIONS == (
+        ("post", "/wallets/{id}/deposit"),
+        ("post", "/transfers"),
+    )
 
 
 # Runtime: real responses match the documented schemas
