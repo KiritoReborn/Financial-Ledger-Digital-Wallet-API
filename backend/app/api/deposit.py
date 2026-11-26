@@ -12,18 +12,25 @@ import sqlite3
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Path, Request
+from fastapi import APIRouter, Depends, Path, Request
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..auth import authenticated_user_id
 from ..contracts import IdempotencyRequest, OperationResult, PostingRequest
 from ..http import ApiError
 from ..posting import LedgerPoster
-from ..services.idempotency import parse_idempotency_key, run_idempotent
+from ..services.idempotency import (
+    idempotency_key_openapi,
+    parse_idempotency_key,
+    run_idempotent,
+)
 from .errors import database_error
 
-router = APIRouter()
+# Documents bearer auth in OpenAPI only; _authenticate still returns the 401 envelope.
+bearer = HTTPBearer(scheme_name="bearerAuth", auto_error=False)
+router = APIRouter(dependencies=[Depends(bearer)])
 poster = LedgerPoster()
 
 
@@ -102,6 +109,7 @@ def _transaction_body(conn: sqlite3.Connection, txn_id: UUID) -> dict[str, objec
     operation_id="deposit",
     tags=["wallets"],
     summary="Add simulated funds idempotently",
+    openapi_extra=idempotency_key_openapi(),
     responses={
         400: {"description": "Idempotency-Key is missing or blank."},
         401: {"description": "Missing or invalid bearer token."},
