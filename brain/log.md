@@ -55,3 +55,5 @@ The registration endpoint and admin bootstrap passed the HTTP and restart tests.
 2026-11-25 · Completed [[projects/fr-1-wallets]]. Verified owner-only reads, foreign and unknown IDs, system-wallet recovery across restarts, and deposit compatibility.
 
 2026-11-26 · Ran brain-ingest on SRS §2.1 and captured the caller-owned SQLite transaction boundary in [[inbox/transaction-ownership]]. The inbox entry is ready for filing with brain-refine.
+
+2026-11-27 · H07. Added the React routes and shared Prism client. In Chrome, signing in opened the fixture wallet list, reloading kept the tab session, the wallet link opened history, and signing out cleared the token. The client tests and production build passed. [Frontend setup](../frontend/README.md)
