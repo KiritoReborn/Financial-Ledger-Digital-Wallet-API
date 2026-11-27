@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import { api, sessionKey } from './api.js';
 import { DepositPage, TransferPage } from './MoneyPages.jsx';
+import Wallets from './Wallets.jsx';
 import Register from './Register.jsx';
 import './style.css';
 
@@ -64,21 +65,6 @@ function SignIn({onSignIn}) {
     <input id="token" name="token" type="password" required pattern=".*\S.*" autoComplete="off"/>
     <button disabled={pending}>{pending ? 'Signing in…' : 'Open wallets'}</button></form>
     {error && <p role="alert">{error}</p>}<Link to="/register">Register a user</Link></section>;
-}
-
-function Wallets() {
-  const [result, setResult] = useState(null);
-  useEffect(() => {
-    const controller = new AbortController();
-    api('/wallets', {signal: controller.signal}).then(({data}) => setResult({wallets:data.wallets}))
-      .catch(error => { if (!controller.signal.aborted) setResult({error}); });
-    return () => controller.abort();
-  }, []);
-  return <section><h1>Your wallets</h1>
-    {!result ? <p role="status">Loading wallets…</p> : result.error ?
-      <p role="alert">{result.error.code || 'REQUEST_FAILED'} · {result.error.message}</p> :
-      result.wallets.length ? <ul>{result.wallets.map(w => <li key={w.id}><Link to={'/wallets/'+w.id+'/history'}>{w.currency} wallet</Link></li>)}</ul> : <p>No wallets yet.</p>}
-  </section>;
 }
 
 createRoot(document.getElementById('root')).render(<BrowserRouter><Shell/></BrowserRouter>);
