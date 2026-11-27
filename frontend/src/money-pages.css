@@ -1,0 +1,17 @@
+/* B05 deposit and transfer screens. Builds on the shared style.css. */
+select { font: inherit; padding: .7rem; border-radius: .35rem; border: 1px solid #688273; background: white; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+button.secondary { color: #245843; background: white; border: 1px solid #245843; }
+.detail { margin: 0; color: #4d6159; font-size: .9rem; overflow-wrap: anywhere; }
+.field-error { margin: 0; color: #9b2c1f; font-size: .9rem; }
+input[aria-invalid="true"] { border-color: #9b2c1f; }
+.operation { display: grid; gap: .6rem; max-width: 32rem; padding-top: 1rem; border-top: 1px solid #cbd7ce; }
+.outcome { padding: .9rem 1rem; border-radius: .5rem; border: 1px solid; }
+.outcome p { margin: .2rem 0; }
+.outcome.done { border-color: #7fae93; background: #eef6f0; }
+.outcome.uncertain { border-color: #c79a2b; background: #fdf6e3; }
+.outcome.rejected { border-color: #c46a5e; background: #fbeeec; }
+.badge { margin-left: .6rem; padding: .1rem .55rem; border-radius: 1rem; font-size: .8rem;
+  color: white; background: #4a5fa8; vertical-align: middle; }
+.actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+code { font-size: .85rem; }
