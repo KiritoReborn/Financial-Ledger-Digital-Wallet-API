@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import { api, sessionKey } from './api.js';
+import { DepositPage, TransferPage } from './MoneyPages.jsx';
 import './style.css';
 
 function Shell() {
@@ -23,8 +24,8 @@ function Shell() {
       <Route path="/admin" element={<Placeholder title="Administration"/>}/>
       <Route element={signedIn ? <Outlet/> : <Navigate to="/sign-in" replace/>}>
         <Route path="/wallets" element={<Wallets/>}/>
-        <Route path="/deposit" element={<Placeholder title="Deposit"/>}/>
-        <Route path="/transfers" element={<Placeholder title="Transfers"/>}/>
+        <Route path="/deposit" element={<DepositPage/>}/>
+        <Route path="/transfers" element={<TransferPage/>}/>
         <Route path="/history" element={<Placeholder title="Wallet history"/>}/>
         <Route path="/wallets/:id/history" element={<Placeholder title="Wallet history"/>}/>
       </Route>

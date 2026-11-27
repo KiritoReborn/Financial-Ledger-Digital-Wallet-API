@@ -138,3 +138,26 @@ print(result.body["id"], result.key, result.replayed)
 `ApiError` carries `status`, `code`, `message`, `details` and `request_id`.
 `ClientError` means the client refused to send, or could not reach or read the
 API. Neither ever contains a token.
+
+## 8. Use the web UI
+
+Start the UI as described in `frontend/README.md`, then sign in with a user's
+token and open **Deposit** or **Transfers**.
+
+- Choose one of your wallets, then type the amount the way you would write it:
+  `12.50` INR or USD, or `500` JPY. The page converts it to minor units using
+  the currency exponent, and refuses extra decimals, zero, negative values or
+  amounts over the limit before anything is sent.
+- For a transfer, paste the receiving wallet ID from its owner. Both wallets
+  must hold the same currency.
+- Each **Deposit** or **Transfer** click starts a new operation with a new
+  `Idempotency-Key`, shown under the result. The button is disabled while the
+  request is in flight.
+- **Send again with same key** resends the exact same request. If the first
+  attempt went through, the stored result comes back with a **Replayed** badge
+  and no money moves twice.
+- After a timeout, a lost connection or a 5xx, the page cannot know whether
+  the operation happened. The main button stays locked: resend with the same
+  key, or choose **Discard and start a new operation**.
+- A rejection such as `INSUFFICIENT_FUNDS` stored nothing. Fix the form and
+  submit again. The page never retries on its own.
