@@ -27,6 +27,7 @@ source: "Final SRS section 6.3"
 - [[2026-11-27-b09-api-client]] - B09 secure API client and deposit/transfer guide.
 - [[2026-11-27-b06-simulate-transfer]] - B06 simulate-transfer skill and its evaluation run.
 - [[2026-11-27-b05-deposit-transfer-ui]] - B05 deposit and transfer screens with safe retries.
+- [[2026-11-27-b07-brain-query]] - B07 brain-query skill, cited answers and drafts from the vault.
 
 Each feature increment adds a progress note to the existing team brain. The
 obsolete setup branch was removed; A still owns the full vault/ingest work.
