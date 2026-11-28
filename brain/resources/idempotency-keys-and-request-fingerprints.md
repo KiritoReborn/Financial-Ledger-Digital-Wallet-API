@@ -17,5 +17,11 @@ source: "Final SRS section 4.2; IETF httpapi Idempotency-Key header draft; SQLit
 - Storing the key in the same database transaction as the money movement keeps them consistent: both commit or neither does. Storing it separately can leave a key with no transaction, or a transaction with no key.
 - In SQLite, `BEGIN IMMEDIATE` takes the write lock at the start of the transaction, so two requests with the same key run one after the other. The second sees the first's committed key and replays it. [SQLite transaction control](https://www.sqlite.org/lang_transaction.html)
 
+PRs informed:
+- KiritoReborn/Financial-Ledger-Digital-Wallet-API#31 (B01 core)
+- KiritoReborn/Financial-Ledger-Digital-Wallet-API#33 (B01b concurrency)
+- KiritoReborn/Financial-Ledger-Digital-Wallet-API#35 (B02 deposit)
+- KiritoReborn/Financial-Ledger-Digital-Wallet-API#39 (B03 transfer)
+
 Related: [[resources/sqlite-migration-transactions]], [[projects/2026-11-25-b01-idempotency]].
 Decision: `docs/adr/0002-idempotency-fingerprint-and-replay.md`.
