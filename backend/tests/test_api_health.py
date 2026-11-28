@@ -107,9 +107,13 @@ def test_product_schema_exposes_expected_routes():
         "/wallets",
         "/wallets/{id}/deposit",
         "/wallets/{id}",
+        "/wallets/{id}/transactions",
         "/transfers",
+        "/transfers/{id}",
         "/transactions/{id}/reverse",
     }
     assert paths["/wallets"]["post"]["security"] == [{"bearerAuth": []}]
+    for path in ("/transfers/{id}", "/wallets/{id}/transactions"):
+        assert paths[path]["get"]["security"] == [{"bearerAuth": []}]
     assert "get" in paths["/health"]
     assert not paths["/health"]["get"].get("security")

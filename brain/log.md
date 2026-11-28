@@ -39,12 +39,15 @@ source: "User-directed incremental C01 work"
 | 2026-11-27 | B | Added the B09 API client scripts/api_client.py and docs/deposit-transfer.md. The client reads secrets only from the environment, keeps them out of URLs, bodies, errors, repr and output, refuses plain HTTP off localhost, and gives every deposit and transfer a UUID key to retry with. 30 new tests and a live uvicorn run; Ruff passed. | [[projects/2026-11-27-b09-api-client]] |
 | 2026-11-27 | B | Added the B06 simulate-transfer skill: two fresh users, deposits, a keyed transfer, a replay that moves nothing, two concurrent transfers, reconcile and final balances through scripts/api_client.py. 14 new tests; a live uvicorn evaluation run passed all eight steps with no secret in any output. | [[projects/2026-11-27-b06-simulate-transfer]] |
 | 2026-11-27 | B | Added the B05 deposit and transfer screens: minor-unit conversion by currency exponent, a new Idempotency-Key per operation, Send again with same key, a Replayed badge, and a locked submit after an uncertain outcome. 36 new frontend tests; checked in the browser against the real API. | [[projects/2026-11-27-b05-deposit-transfer-ui]] |
+| 2026-11-28 | C | Integrated C08 into the shared React shell. History uses the exclusive C06 cursor. The concurrency demo sends two independently keyed transfers and resends only uncertain outcomes. | [[projects/2026-11-28-c08-ledger-pages]] |
 | 2026-11-27 | B | Added the B07 brain-query skill: BM25 search over the vault that answers only with sentences from notes, each cited as a wikilink, plus cited ADR and SRS drafts. 14 new tests; a seven-question evaluation run is recorded in skills/brain-query/evaluation.md. | [[projects/2026-11-27-b07-brain-query]] |
 | 2026-11-25 | D | Implemented D02 reversal service and idempotent POST /transactions/{id}/reverse wired to B01 run_idempotent, C04 LedgerPoster, H03 SqliteDatabase, and H04 ADMIN_ID. Added 16 unit, e2e, concurrency race/replay, and auth tests; verified full suite and Ruff. | [[projects/2026-11-25-d02-reversal]] |
 | 2026-11-25 | D | Added D04 admin security and SQLite tamper-detection suite (20 tests), D06 local-check failure-path test coverage, and D08 CI skill/brain validator wired into ci.yml with negative tests. | [[projects/2026-11-25-d04-d08-security-ci]] |
 | 2026-11-25 | D | Added D07 brain-refine skill and validation tests, D09 admin security guide and CHANGELOG.md, and D10 financial integrity review note with brain/index.md links. | [[projects/2026-11-25-d10-reconciliation-review]] |
 
 This log records development and verification sessions.
+
+- 2026-11-28 · C06. Reapplied owner-only wallet history and transfer details to rewritten main. The focused suite passed 47 tests and the full Python suite passed 645. [[projects/2026-11-26-c06-history]]
 
 ### 2026-11-23 · FR-1.2 bearer tokens
 

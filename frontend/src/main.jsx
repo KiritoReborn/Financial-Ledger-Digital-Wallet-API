@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import { api, sessionKey } from './api.js';
 import { DepositPage, TransferPage } from './MoneyPages.jsx';
+import { TransferConcurrencyPage, WalletHistoryPage } from './LedgerPages.jsx';
 import Wallets from './Wallets.jsx';
 import Register from './Register.jsx';
 import './style.css';
@@ -16,8 +17,11 @@ function Shell() {
     navigate('/sign-in', { replace: true });
   }
   return <><header><Link className="brand" to="/">Ledger Wallet</Link>
-    <nav aria-label="Main navigation">{[['/wallets','Wallets'],['/deposit','Deposit'],['/transfers','Transfers'],['/history','History'],['/admin','Admin']].map(([to,label]) =>
-      <NavLink key={to} to={to}>{label}</NavLink>)}</nav>
+    <nav aria-label="Main navigation">{[
+      ['/wallets', 'Wallets'], ['/deposit', 'Deposit'], ['/transfers', 'Transfers'],
+      ['/history', 'History'], ['/transfers/concurrency', 'Concurrency demo'], ['/admin', 'Admin'],
+    ].map(([to,label]) =>
+      <NavLink key={to} to={to} end={to === '/transfers'}>{label}</NavLink>)}</nav>
     {signedIn && <button onClick={signOut}>Sign out</button>}</header>
     <main><Routes>
       <Route path="/" element={<Navigate to="/wallets" replace/>}/>
@@ -28,8 +32,9 @@ function Shell() {
         <Route path="/wallets" element={<Wallets/>}/>
         <Route path="/deposit" element={<DepositPage/>}/>
         <Route path="/transfers" element={<TransferPage/>}/>
-        <Route path="/history" element={<Placeholder title="Wallet history"/>}/>
-        <Route path="/wallets/:id/history" element={<Placeholder title="Wallet history"/>}/>
+        <Route path="/history" element={<WalletHistoryPage/>}/>
+        <Route path="/wallets/:id/history" element={<WalletHistoryPage/>}/>
+        <Route path="/transfers/concurrency" element={<TransferConcurrencyPage/>}/>
       </Route>
       <Route path="*" element={<section><h1>Page not found</h1><Link to="/">Return to wallets</Link></section>}/>
     </Routes></main></>;

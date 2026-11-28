@@ -18,6 +18,7 @@ source: "Final SRS section 6.3"
 - [[2026-11-20-c04-posting]] - posting, reversals and ledger integrity tests.
 - [[2026-11-22-github-review]] - pull requests, workflow findings and team decisions.
 - [[2026-11-24-c05-recovery]] - rollback, replay-row atomicity and abrupt process exit checks.
+- [[2026-11-26-c06-history]] - owner-only transfer details and paginated wallet history on the live API.
 - [[2026-11-25-b01-idempotency]] - B01 idempotency key validation, request fingerprint, replay and conflict.
 - [[2026-11-25-b01b-idempotency-concurrency]] - B01b concurrent same-key requests, process-level race and rollback.
 - [[2026-11-25-b02-deposit]] - B02 idempotent deposit endpoint, ownership checks and integer-only amounts.
@@ -27,6 +28,7 @@ source: "Final SRS section 6.3"
 - [[2026-11-27-b09-api-client]] - B09 secure API client and deposit/transfer guide.
 - [[2026-11-27-b06-simulate-transfer]] - B06 simulate-transfer skill and its evaluation run.
 - [[2026-11-27-b05-deposit-transfer-ui]] - B05 deposit and transfer screens with safe retries.
+- [[2026-11-28-c08-ledger-pages]] - C08 wallet history and concurrent transfer screens in the shared shell.
 - [[2026-11-27-b07-brain-query]] - B07 brain-query skill, cited answers and drafts from the vault.
 
 Each feature increment adds a progress note to the existing team brain. The
