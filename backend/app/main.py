@@ -12,10 +12,11 @@ from .api.admin import AdminCredentials, ReadSnapshot
 from .api.admin import router as admin_router
 from .api.deposit import router as deposit_router
 from .api.health import router as health_router
+from .api.history import create_history_router
 from .api.transfers import router as transfers_router
 from .api.users import router as users_router
 from .api.wallets import router as wallets_router
-from .auth import bootstrap_admin
+from .auth import authenticated_user_id, bootstrap_admin
 from .database import SqliteDatabase, initialize_system_wallets
 from .health import DatabaseReadiness
 from .http import RequestContextMiddleware, RequestSafetyMiddleware, install_error_handlers
@@ -111,4 +112,7 @@ def create_app(
     application.include_router(admin_router)
     application.include_router(deposit_router)
     application.include_router(transfers_router)
+    application.include_router(
+        create_history_router(resolve_user=authenticated_user_id, transactions=database)
+    )
     return application

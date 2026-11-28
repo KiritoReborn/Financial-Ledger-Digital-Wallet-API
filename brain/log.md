@@ -46,6 +46,8 @@ source: "User-directed incremental C01 work"
 
 This log records development and verification sessions.
 
+- 2026-11-28 · C06. Reapplied owner-only wallet history and transfer details to rewritten main. The focused suite passed 47 tests and the full Python suite passed 645. [[projects/2026-11-26-c06-history]]
+
 ### 2026-11-23 · FR-1.2 bearer tokens
 
 Registration can issue a random token and store its SHA-256 digest in the column from [[projects/h02-database-migration]]. The lookup test uses two users and checks that presenting a stored digest fails. The admin route shares the header parser and keeps its separate key check.
