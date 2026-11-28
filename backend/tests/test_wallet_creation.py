@@ -103,3 +103,42 @@ def test_restart_preserves_system_wallets_and_restores_missing_currency():
         assert len(restored) == 3 and restored[0] == ("INR", original[0][1], -123, None)
         assert restored[1][0] == "JPY" and restored[1][2:] == (0, None)
         assert restored[2] == original[2]
+
+
+def test_wallet_creation_rejects_server_managed_fields():
+    with TestClient(create_app()) as client:
+        user = client.post("/users", json={"name": "Alice", "email": "alice@example.org"}).json()
+        headers = {"Authorization": "Bearer " + user["token"]}
+        for field, value in (("balance_minor", 500), ("is_system", True), ("id", user["id"])):
+            body = {"currency": "USD", field: value}
+            response = client.post("/wallets", headers=headers, json=body)
+            assert response.status_code == 422, field
+            assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+        assert client.get("/wallets", headers=headers).json() == {"wallets": []}
+        created = client.post("/wallets", headers=headers, json={"currency": "USD"})
+        assert created.status_code == 201
+        assert created.json()["balance_minor"] == 0
+
+
+def test_invalid_credentials_cannot_read_or_create_wallets():
+    import hashlib
+
+    with TestClient(create_app()) as client:
+        user = client.post("/users", json={"name": "Alice", "email": "alice@example.org"}).json()
+        token = user["token"]
+        owner = {"Authorization": "Bearer " + token}
+        wallet = client.post("/wallets", headers=owner, json={"currency": "USD"}).json()
+        digest = hashlib.sha256(token.encode()).hexdigest()
+        for credential in ("Basic " + token, "Bearer " + digest, "Bearer"):
+            headers = {"Authorization": credential}
+            responses = [
+                client.get("/wallets", headers=headers),
+                client.get("/wallets/" + wallet["id"], headers=headers),
+                client.post("/wallets", headers=headers, json={"currency": "JPY"}),
+            ]
+            for response in responses:
+                assert response.status_code == 401
+                assert response.json()["error"]["code"] == "UNAUTHENTICATED"
+                assert token not in response.text and digest not in response.text
+        assert client.get("/wallets", headers=owner).json() == {"wallets": [wallet]}
