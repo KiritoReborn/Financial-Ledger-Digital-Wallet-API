@@ -14,3 +14,8 @@ form { display: grid; max-width: 24rem; gap: .7rem; margin-bottom: 1.5rem; }
 input, button { font: inherit; padding: .7rem; border-radius: .35rem; }
 input { border: 1px solid #688273; }
 button { color: white; background: #245843; border: 0; cursor: pointer; }
+label { display: grid; gap: .35rem; }
+select { font: inherit; padding: .65rem; }
+article { border-top: 1px solid #cbd7ce; padding: .5rem 0 1.25rem; }
+article p { font-variant-numeric: tabular-nums; }
+button:disabled { opacity: .65; cursor: wait; }

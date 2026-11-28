@@ -11,7 +11,14 @@ export async function api(path, { method = 'GET', body, headers, signal, authent
   const response = await fetch('/api' + path, {
     method, headers: requestHeaders, body: JSON.stringify(body), signal, redirect: 'error',
   });
-  const data = await response.json();
+  const data = JSON.parse(await response.text(), (key, value, context) => {
+    // Preserve SQLite int64 balances before JavaScript rounds the JSON number.
+    if (key === 'balance_minor' && !Number.isSafeInteger(value)) {
+      if (!context?.source) throw new Error('Update your browser to display this balance accurately.');
+      return BigInt(context.source);
+    }
+    return value;
+  });
   if (!response.ok) {
     const error = new Error(data.error?.message || 'Request failed');
     error.code = data.error?.code || 'HTTP_' + response.status;

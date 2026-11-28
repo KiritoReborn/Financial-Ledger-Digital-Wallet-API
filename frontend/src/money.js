@@ -30,7 +30,7 @@ export function toMinorUnits(text, currency) {
 export function formatMinor(minor, currency) {
   const exponent = exponentOf(currency);
   const sign = minor < 0 ? '-' : '';
-  const digits = String(Math.abs(minor)).padStart(exponent + 1, '0');
+  const digits = String(minor < 0 ? -minor : minor).padStart(exponent + 1, '0');
   if (exponent === 0) return sign + digits;
   return `${sign}${digits.slice(0, -exponent)}.${digits.slice(-exponent)}`;
 }

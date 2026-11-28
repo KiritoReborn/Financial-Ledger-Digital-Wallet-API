@@ -109,7 +109,7 @@ function NeedsWallets({ state, children }) {
 
 export function DepositPage() {
   const wallets = useWallets();
-  const [walletId, setWalletId] = useState('');
+  const [walletId, setWalletId] = useState(() => new URLSearchParams(window.location.search).get('wallet_id') || '');
   const wallet = wallets.wallets?.find(item => item.id === walletId) || wallets.wallets?.[0];
   const amount = useAmount(wallet?.currency);
   const op = useOperation(wallets.reload);
