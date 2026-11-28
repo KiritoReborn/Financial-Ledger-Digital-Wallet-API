@@ -61,6 +61,8 @@ The registration endpoint and admin bootstrap passed the HTTP and restart tests.
 
 2026-11-26 · Ran brain-ingest on SRS §2.1 and captured the caller-owned SQLite transaction boundary in [[inbox/transaction-ownership]]. The inbox entry is ready for filing with brain-refine.
 
+2026-11-28 · C09. Checked Member C's work against rewritten main `1ec69e1` and the revised distribution. Updated the [status table](../docs/member-c-progress.md) and [traceability matrix](../docs/traceability.csv) using the merged posting, recovery and HTTP integration evidence.
+
 2026-11-27 · H07. Added the React routes and shared Prism client. In Chrome, signing in opened the fixture wallet list, reloading kept the tab session, the wallet link opened history, and signing out cleared the token. The client tests and production build passed. [Frontend setup](../frontend/README.md)
 
 2026-11-27 · H08 (EI-UI-1/2/7/8). Registration shows the token once. In Chrome against a temporary SQLite database, an invalid token was rejected, the issued token opened an empty dashboard, and a new INR wallet still showed 0.00 after reload. Its deposit link carried the wallet ID. Three frontend tests and the production build passed, including an int64 balance formatting check.
