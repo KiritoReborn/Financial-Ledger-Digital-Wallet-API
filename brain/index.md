@@ -45,8 +45,19 @@ Existing team reference notes:
 
 - [[inbox/transaction-ownership|Transaction ownership in the API]]
 
+- [[inbox/bearer-token-digests|Why the stored digest cannot sign in]]
+
+- [[inbox/registration-token-lifetime|Where the registration token lives]]
+
+- [[inbox/exact-wallet-balance-display|Keeping the last digit of a wallet balance]]
+
+
 ## Member A handover
 
 - [[projects/wallet-ui-handover|From registration to a funded wallet]]
 
 - [[projects/wallet-validation-handover|Wallet validation at the HTTP boundary]]
+
+## Stage reviews
+
+- [[projects/member-a-stage-one-review|Stage 1 review for Member A]]
