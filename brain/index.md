@@ -48,3 +48,5 @@ Existing team reference notes:
 ## Member A handover
 
 - [[projects/wallet-ui-handover|From registration to a funded wallet]]
+
+- [[projects/wallet-validation-handover|Wallet validation at the HTTP boundary]]
