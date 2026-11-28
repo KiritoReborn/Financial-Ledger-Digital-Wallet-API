@@ -61,3 +61,5 @@ The registration endpoint and admin bootstrap passed the HTTP and restart tests.
 2026-11-26 · Ran brain-ingest on SRS §2.1 and captured the caller-owned SQLite transaction boundary in [[inbox/transaction-ownership]]. The inbox entry is ready for filing with brain-refine.
 
 2026-11-27 · H07. Added the React routes and shared Prism client. In Chrome, signing in opened the fixture wallet list, reloading kept the tab session, the wallet link opened history, and signing out cleared the token. The client tests and production build passed. [Frontend setup](../frontend/README.md)
+
+2026-11-28 · H09. Wallet creation rejects a client-supplied balance, system flag, or wallet ID with 422. The regression checks that the wallet list stays empty after all three requests and a subsequent valid request creates a zero-balance wallet. Registration, user-token and wallet tests passed (20 cases).
