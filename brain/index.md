@@ -44,3 +44,9 @@ Existing team reference notes:
 ## Inbox
 
 - [[inbox/transaction-ownership|Transaction ownership in the API]]
+
+## Member A handover
+
+- [[projects/wallet-ui-handover|From registration to a funded wallet]]
+
+- [[projects/wallet-validation-handover|Wallet validation at the HTTP boundary]]
