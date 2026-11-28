@@ -17,3 +17,5 @@ source: "SQLite documentation on column affinity, partial indexes, and foreign k
 - SQLite configures foreign-key enforcement per connection. Enable `PRAGMA foreign_keys = ON` before beginning a transaction when exercising the schema. [SQLite foreign-key support](https://www.sqlite.org/foreignkeys.html#fk_enable)
 
 See [[projects/h02-database-migration|H02 database migration]] for how these constraints map to the SRS.
+
+Implementation and review: [PR #18](https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/18).

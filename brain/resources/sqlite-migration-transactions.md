@@ -15,3 +15,5 @@ source: "SQLite transaction documentation; Python 3.11 sqlite3 documentation"
 - Python 3.11's `executescript()` commits a pending transaction before running the script. The runner uses `sqlite3.complete_statement()` to keep trigger bodies intact and executes each statement on the same open transaction as the version insert. A script failure rolls those changes back together. [Python 3.11 sqlite3 documentation](https://docs.python.org/3.11/library/sqlite3.html#sqlite3.Cursor.executescript)
 
 See [[projects/h02-database-migration|H02 database migration]] for the verification commands.
+
+Implementation and review: [PR #18](https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/18).

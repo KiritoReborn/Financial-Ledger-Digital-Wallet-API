@@ -80,3 +80,11 @@ The registration endpoint and admin bootstrap passed the HTTP and restart tests.
 2026-11-28 · Linked the merged schema work and the route from registration to deposit in [[projects/wallet-ui-handover|From registration to a funded wallet]].
 
 2026-11-28 · Added [[projects/wallet-validation-handover|Wallet validation at the HTTP boundary]] with the H09 command and the checks for rejected writes.
+
+2026-11-28 · Captured [[inbox/bearer-token-digests|Why the stored digest cannot sign in]] from backend/app/auth.py, issue_user_token and authenticated_user_id; backend/tests/test_wallet_creation.py.
+
+2026-11-28 · Captured [[inbox/registration-token-lifetime|Where the registration token lives]] from SRS.pdf, EI-UI-1; frontend/src/Register.jsx and frontend/src/main.jsx.
+
+2026-11-28 · Captured [[inbox/exact-wallet-balance-display|Keeping the last digit of a wallet balance]] from SRS.pdf, EI-UI-8; frontend/src/api.js; frontend/tests/balances.test.js.
+
+2026-11-28 · [[projects/member-a-stage-one-review|Stage 1 review for Member A]] links five research notes and two decision records. Rechecked the schema, migration, auth and wallet suites (83 tests) and the frontend suite (55 tests).
