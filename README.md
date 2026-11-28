@@ -3,7 +3,7 @@
   * Varanasi Harshith Raj
   * Potturu Pranav Sai
   * Jaya Raghunandhan Reddy
-  * Gangavarapu Jaswant
+  * Gangavarapu Jaswanth
 ## Project Scope:
  * This System is the backend of a digital wallet with a React frontend, build on a double-entry ledger. It addresses three problems: **balance updates that overwrite each other under concurrency**, **duplicate charges caused by network retries**, and **ledger records that can be silently altered**.
 
