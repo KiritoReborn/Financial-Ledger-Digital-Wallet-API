@@ -1,6 +1,8 @@
 export const sessionKey = 'ledger.userToken';
 
-export async function api(path, { method = 'GET', body, headers, signal, authenticated = true } = {}) {
+export async function api(path, {
+  method = 'GET', body, headers, signal, authenticated = true, revive,
+} = {}) {
   if (!path.startsWith('/') || path.startsWith('//')) throw new Error('Expected an API path');
   const requestHeaders = new Headers(headers);
   if (authenticated && !requestHeaders.has('Authorization')) {
@@ -17,7 +19,7 @@ export async function api(path, { method = 'GET', body, headers, signal, authent
       if (!context?.source) throw new Error('Update your browser to display this balance accurately.');
       return BigInt(context.source);
     }
-    return value;
+    return response.ok && revive ? revive(key, value, context) : value;
   });
   if (!response.ok) {
     const error = new Error(data.error?.message || 'Request failed');
