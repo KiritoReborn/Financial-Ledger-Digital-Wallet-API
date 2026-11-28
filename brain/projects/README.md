@@ -24,6 +24,7 @@ source: "Final SRS section 6.3"
 - [[2026-11-25-b02-deposit]] - B02 idempotent deposit endpoint, ownership checks and integer-only amounts.
 - [[2026-11-25-b03-transfers]] - B03 idempotent transfer endpoint, sender ownership, currency and funds checks.
 - [[2026-11-26-b04-exactly-once-suite]] - B04 exactly-once and negative suite over HTTP, 50 competing transfers.
+- [[2026-11-26-c07-http-stress]] - C07 reference workload and concurrent transfer latency.
 - [[2026-11-26-b08-openapi-drift]] - B08 OpenAPI drift check between the FastAPI app and the contract.
 - [[2026-11-27-b09-api-client]] - B09 secure API client and deposit/transfer guide.
 - [[2026-11-27-b06-simulate-transfer]] - B06 simulate-transfer skill and its evaluation run.
