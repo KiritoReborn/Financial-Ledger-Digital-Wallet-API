@@ -76,3 +76,5 @@ The registration endpoint and admin bootstrap passed the HTTP and restart tests.
 2026-11-28 · H09. Wallet creation rejects a client-supplied balance, system flag, or wallet ID with 422. The regression checks that the wallet list stays empty after all three requests and a subsequent valid request creates a zero-balance wallet. Registration, user-token and wallet tests passed (20 cases).
 
 2026-11-28 · H09. Checked the wallet list, detail and creation endpoints with a wrong auth scheme, a stored token digest and an empty bearer credential. All returned 401 without echoing credentials, and the owner's wallet list stayed intact. Added the registration and wallet error cases to the root README. On the updated main base, all 606 Python tests and Ruff passed.
+
+2026-11-28 · Linked the merged schema work and the route from registration to deposit in [[projects/wallet-ui-handover|From registration to a funded wallet]].

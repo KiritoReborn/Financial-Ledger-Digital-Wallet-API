@@ -39,8 +39,8 @@ python -m db.migrate "$h02_db_dir/ledger.sqlite3"
 python -m pytest -q tests
 ```
 
-The CLI check recorded versions 1 and 2 once each, found six application tables, and reported zero foreign-key violations. The H03 application provider will own the runtime PRAGMAs and startup call. [Migration runner](../../db/migrate.py)
+The CLI check recorded versions 1 and 2 once each, found six application tables, and reported zero foreign-key violations. The [[projects/h03-sqlite-provider|H03 provider]] now applies the runtime PRAGMAs and runs migrations at startup. [Migration runner](../../db/migrate.py)
 
-The feature branch is available for H02 review. [Compare with main](https://github.com/harshith-raj-06/SE-Project/compare/main...feat/database-schema-001)
+Migration 001 and the runner merged in [PR #18](https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/18).
 
 Related notes [[resources/sqlite-schema-constraints|schema constraints]] and [[resources/sqlite-migration-transactions|migration transactions]].
