@@ -40,3 +40,19 @@ Startup creates the database at `DATABASE_PATH` and applies pending migrations. 
 * **Demonstration-level authentication (SAF-1):** Token authentication exists to demonstrate the design. It is not production-grade and must not be used to protect real accounts or data.
 * **Append-only, not tamper-evident (CA-3):** The ledger is *database-enforced append-only*: SQLite triggers reject every `UPDATE` and `DELETE` on `transactions` and `ledger_entries` (FR-4.1), and mistakes are fixed with explicit reversals. It is **not** a tamper-evident hash chain, so someone with direct access to the database file could alter it undetected.
 
+
+## Registration and wallet validation
+
+Register with `POST /users` using a name and email. Save the returned token when it is issued. Send it in the `Authorization: Bearer <token>` header for wallet requests. Keep the token out of URLs and logs.
+
+Create a wallet with `POST /wallets` and a body such as `{"currency":"INR"}`. Each user can have one wallet per supported currency (INR, USD, JPY). The server assigns the owner and ID and starts the balance at zero. Use `GET /wallets` to list your wallets or `GET /wallets/{id}` to retrieve one.
+
+| Request | Expected result |
+| --- | --- |
+| Register an email already in use | 409 |
+| Use a missing or invalid bearer credential | 401 |
+| Read another user's wallet with a valid token | 403 |
+| Read an unknown wallet with a valid token and valid UUID | 404 |
+| Request a duplicate currency, an unsupported currency, or provide a balance on creation | 422 |
+
+Run the focused regression with `python -m pytest -q backend/tests/test_registration.py backend/tests/test_user_tokens.py backend/tests/test_wallet_creation.py`. Tests use temporary SQLite databases.

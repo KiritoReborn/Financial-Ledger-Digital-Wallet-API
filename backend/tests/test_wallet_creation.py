@@ -119,3 +119,26 @@ def test_wallet_creation_rejects_server_managed_fields():
         created = client.post("/wallets", headers=headers, json={"currency": "USD"})
         assert created.status_code == 201
         assert created.json()["balance_minor"] == 0
+
+
+def test_invalid_credentials_cannot_read_or_create_wallets():
+    import hashlib
+
+    with TestClient(create_app()) as client:
+        user = client.post("/users", json={"name": "Alice", "email": "alice@example.org"}).json()
+        token = user["token"]
+        owner = {"Authorization": "Bearer " + token}
+        wallet = client.post("/wallets", headers=owner, json={"currency": "USD"}).json()
+        digest = hashlib.sha256(token.encode()).hexdigest()
+        for credential in ("Basic " + token, "Bearer " + digest, "Bearer"):
+            headers = {"Authorization": credential}
+            responses = [
+                client.get("/wallets", headers=headers),
+                client.get("/wallets/" + wallet["id"], headers=headers),
+                client.post("/wallets", headers=headers, json={"currency": "JPY"}),
+            ]
+            for response in responses:
+                assert response.status_code == 401
+                assert response.json()["error"]["code"] == "UNAUTHENTICATED"
+                assert token not in response.text and digest not in response.text
+        assert client.get("/wallets", headers=owner).json() == {"wallets": [wallet]}
