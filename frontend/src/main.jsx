@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
 import { api, sessionKey } from './api.js';
 import { DepositPage, TransferPage } from './MoneyPages.jsx';
+import Wallets from './Wallets.jsx';
+import Register from './Register.jsx';
 import './style.css';
 
 function Shell() {
@@ -20,7 +22,7 @@ function Shell() {
     <main><Routes>
       <Route path="/" element={<Navigate to="/wallets" replace/>}/>
       <Route path="/sign-in" element={<SignIn onSignIn={() => setSignedIn(true)}/>}/>
-      <Route path="/register" element={<Placeholder title="Registration"/>}/>
+      <Route path="/register" element={<Register/>}/>
       <Route path="/admin" element={<Placeholder title="Administration"/>}/>
       <Route element={signedIn ? <Outlet/> : <Navigate to="/sign-in" replace/>}>
         <Route path="/wallets" element={<Wallets/>}/>
@@ -39,10 +41,21 @@ function Placeholder({ title }) {
 
 function SignIn({onSignIn}) {
   const navigate = useNavigate();
-  function submit(event) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState('');
+  async function submit(event) {
     event.preventDefault();
     const token = new FormData(event.currentTarget).get('token').trim();
     if (!token) return;
+    setPending(true);
+    setError('');
+    try {
+      await api('/wallets', { headers: { Authorization: 'Bearer ' + token } });
+    } catch (err) {
+      setError([err.code, err.message].filter(Boolean).join(' · '));
+      setPending(false);
+      return;
+    }
     sessionStorage.setItem(sessionKey, token);
     onSignIn();
     navigate('/wallets', { replace: true });
@@ -50,22 +63,8 @@ function SignIn({onSignIn}) {
   return <section><h1>Sign in</h1><form onSubmit={submit}>
     <label htmlFor="token">Wallet access token</label>
     <input id="token" name="token" type="password" required pattern=".*\S.*" autoComplete="off"/>
-    <button>Open wallets</button></form><Link to="/register">Register a user</Link></section>;
-}
-
-function Wallets() {
-  const [result, setResult] = useState(null);
-  useEffect(() => {
-    const controller = new AbortController();
-    api('/wallets', {signal: controller.signal}).then(({data}) => setResult({wallets:data.wallets}))
-      .catch(error => { if (!controller.signal.aborted) setResult({error}); });
-    return () => controller.abort();
-  }, []);
-  return <section><h1>Your wallets</h1>
-    {!result ? <p role="status">Loading wallets…</p> : result.error ?
-      <p role="alert">{result.error.code || 'REQUEST_FAILED'} · {result.error.message}</p> :
-      result.wallets.length ? <ul>{result.wallets.map(w => <li key={w.id}><Link to={'/wallets/'+w.id+'/history'}>{w.currency} wallet</Link></li>)}</ul> : <p>No wallets yet.</p>}
-  </section>;
+    <button disabled={pending}>{pending ? 'Signing in…' : 'Open wallets'}</button></form>
+    {error && <p role="alert">{error}</p>}<Link to="/register">Register a user</Link></section>;
 }
 
 createRoot(document.getElementById('root')).render(<BrowserRouter><Shell/></BrowserRouter>);
