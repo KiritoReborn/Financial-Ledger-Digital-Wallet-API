@@ -1,0 +1,116 @@
+/* D05 admin reconciliation & reversal styles. Builds on style.css and money-pages.css. */
+.admin-grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.admin-banner {
+  padding: .8rem 1rem;
+  border-radius: .5rem;
+  border: 1px solid #cbd7ce;
+  background: #f4f6f1;
+  font-size: .9rem;
+  color: #364942;
+}
+
+.session-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .8rem 1rem;
+  border: 1px solid #cbd7ce;
+  border-radius: .5rem;
+  background: #eef6f0;
+}
+
+.session-bar p {
+  margin: 0;
+}
+
+.admin-panel {
+  border-top: 1px solid #cbd7ce;
+  padding-top: 1.25rem;
+}
+
+.admin-panel h2 {
+  margin: 0 0 .5rem;
+  font-size: 1.2rem;
+}
+
+.check-list {
+  display: grid;
+  gap: .5rem;
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0;
+}
+
+.check-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .65rem .9rem;
+  border: 1px solid #cbd7ce;
+  border-radius: .45rem;
+}
+
+.status-pill {
+  padding: .15rem .6rem;
+  border-radius: 1rem;
+  font-size: .8rem;
+  font-weight: 600;
+  color: white;
+}
+
+.status-pill.pass {
+  background: #245843;
+}
+
+.status-pill.fail {
+  background: #9b2c1f;
+}
+
+.mismatch-list {
+  display: grid;
+  gap: .6rem;
+  margin-top: .75rem;
+}
+
+.mismatch-card {
+  padding: .8rem .95rem;
+  border-radius: .45rem;
+  border: 1px solid #c46a5e;
+  background: #fbeeec;
+  font-size: .9rem;
+  overflow-wrap: anywhere;
+}
+
+.mismatch-card p {
+  margin: .2rem 0;
+}
+
+.confirm-box {
+  display: grid;
+  gap: .65rem;
+  max-width: 32rem;
+  padding: .9rem 1rem;
+  border: 1px solid #c79a2b;
+  border-radius: .5rem;
+  background: #fdf6e3;
+  margin-bottom: 1rem;
+}
+
+.confirm-box p {
+  margin: 0;
+}
+
+@media (max-width: 420px) {
+  .check-row,
+  .session-bar {
+    align-items: flex-start;
+  }
+}

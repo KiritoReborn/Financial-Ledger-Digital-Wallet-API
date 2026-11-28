@@ -4,6 +4,7 @@ import { BrowserRouter, Link, NavLink, Navigate, Outlet, Route, Routes, useNavig
 import { api, sessionKey } from './api.js';
 import { DepositPage, TransferPage } from './MoneyPages.jsx';
 import { TransferConcurrencyPage, WalletHistoryPage } from './LedgerPages.jsx';
+import AdminPage from './AdminPage.jsx';
 import Wallets from './Wallets.jsx';
 import Register from './Register.jsx';
 import './style.css';
@@ -27,7 +28,7 @@ function Shell() {
       <Route path="/" element={<Navigate to="/wallets" replace/>}/>
       <Route path="/sign-in" element={<SignIn onSignIn={() => setSignedIn(true)}/>}/>
       <Route path="/register" element={<Register/>}/>
-      <Route path="/admin" element={<Placeholder title="Administration"/>}/>
+      <Route path="/admin" element={<AdminPage/>}/>
       <Route element={signedIn ? <Outlet/> : <Navigate to="/sign-in" replace/>}>
         <Route path="/wallets" element={<Wallets/>}/>
         <Route path="/deposit" element={<DepositPage/>}/>
@@ -38,10 +39,6 @@ function Shell() {
       </Route>
       <Route path="*" element={<section><h1>Page not found</h1><Link to="/">Return to wallets</Link></section>}/>
     </Routes></main></>;
-}
-
-function Placeholder({ title }) {
-  return <section><h1>{title}</h1><p>This screen is under development.</p></section>;
 }
 
 function SignIn({onSignIn}) {

@@ -46,6 +46,7 @@ source: "User-directed incremental C01 work"
 | 2026-11-25 | D | Implemented D02 reversal service and idempotent POST /transactions/{id}/reverse wired to B01 run_idempotent, C04 LedgerPoster, H03 SqliteDatabase, and H04 ADMIN_ID. Added 16 unit, e2e, concurrency race/replay, and auth tests; verified full suite and Ruff. | [[projects/2026-11-25-d02-reversal]] |
 | 2026-11-25 | D | Added D04 admin security and SQLite tamper-detection suite (20 tests), D06 local-check failure-path test coverage, and D08 CI skill/brain validator wired into ci.yml with negative tests. | [[projects/2026-11-25-d04-d08-security-ci]] |
 | 2026-11-25 | D | Added D07 brain-refine skill and validation tests, D09 admin security guide and CHANGELOG.md, and D10 financial integrity review note with brain/index.md links. | [[projects/2026-11-25-d10-reconciliation-review]] |
+| 2026-11-28 | D | Implemented D05 AdminPage (/admin) with in-memory credentials, reconciliation checks/mismatches, and confirmed idempotent reversals plus Node unit tests and Vite build verification. | [[projects/2026-11-28-d05-admin-ui]] |
 
 This log records development and verification sessions.
 
