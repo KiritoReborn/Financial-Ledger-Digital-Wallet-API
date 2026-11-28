@@ -37,6 +37,9 @@ Existing team reference notes:
 - [[resources/sqlite-schema-constraints|SQLite schema constraints]]
 - [[resources/sqlite-migration-transactions|SQLite migration transactions]]
 - [[resources/idempotency-keys-and-request-fingerprints|Idempotency keys and request fingerprints]]
+- [[resources/sqlite-begin-immediate-and-same-key-races|SQLite BEGIN IMMEDIATE and same-key races]]
+- [[resources/client-retries-and-uncertain-outcomes|Client retries and uncertain outcomes]]
+- [[resources/bm25-search-for-cited-vault-answers|BM25 search for cited vault answers]]
 
 ## Inbox
 

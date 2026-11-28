@@ -83,3 +83,6 @@ SB-3,B07,brain-query-skill-review-pending,,https://github.com/KiritoReborn/Finan
 TQ-7,B07,brain-query-skill-review-pending,,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/56,tests/test_brain_query_skill.py,skills/brain-query/SKILL.md,brain/projects/2026-11-27-b07-brain-query.md
 FR-2.11,C06,transfer-detail-verified-local,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/issues/14,,backend/tests/test_history_integration.py,not-applicable,brain/projects/2026-11-26-c06-history.md
 FR-3.6,C06,owner-only-cursor-history-verified-local,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/issues/14,,tests/test_history.py,not-applicable,brain/projects/2026-11-26-c06-history.md
+SB-2,B10,notes-review-pending,,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/63,not-applicable,not-applicable,brain/projects/2026-11-28-b10-member-b-review.md
+FR-2.4,B10,notes-review-pending,,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/63,backend/tests/test_idempotency.py,not-applicable,brain/projects/2026-11-28-b10-fr-2-walkthrough.md
+FR-2.10,B10,notes-review-pending,,https://github.com/KiritoReborn/Financial-Ledger-Digital-Wallet-API/pull/63,not-applicable,not-applicable,brain/resources/sqlite-begin-immediate-and-same-key-races.md

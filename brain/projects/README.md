@@ -31,6 +31,8 @@ source: "Final SRS section 6.3"
 - [[2026-11-27-b05-deposit-transfer-ui]] - B05 deposit and transfer screens with safe retries.
 - [[2026-11-28-c08-ledger-pages]] - C08 wallet history and concurrent transfer screens in the shared shell.
 - [[2026-11-27-b07-brain-query]] - B07 brain-query skill, cited answers and drafts from the vault.
+- [[2026-11-28-b10-member-b-review]] - B10 Member B stage review: what worked, what did not, what to change.
+- [[2026-11-28-b10-fr-2-walkthrough]] - B10 FR-2 idempotency walkthrough for the Stage 4 review.
 
 Each feature increment adds a progress note to the existing team brain. The
 obsolete setup branch was removed; A still owns the full vault/ingest work.
